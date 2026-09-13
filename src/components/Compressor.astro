@@ -150,12 +150,12 @@
           id="quality"
           min="10"
           max="100"
-          value="80"
+          value="20"
           class="w-24 h-1 cursor-pointer"
           style="accent-color:#171717"
           aria-label="Compression quality"
         />
-        <span id="quality-value" class="text-[13px] font-bold text-[#171717] w-9 tabular-nums text-right">80%</span>
+        <span id="quality-value" class="text-[13px] font-bold text-[#171717] w-9 tabular-nums text-right">20%</span>
       </div>
 
       <!-- Format pill -->
@@ -169,9 +169,9 @@
             class="h-7 pl-1 pr-6 text-[13px] font-bold text-[#171717] bg-transparent border-none cursor-pointer appearance-none focus:outline-none"
             aria-label="Output format"
           >
-            <option value="webp">WebP</option>
+            <option value="webp" selected>WebP</option>
             <option value="jpeg">JPEG</option>
-            <option value="png" selected>PNG</option>
+            <option value="png">PNG</option>
             <option value="avif">AVIF</option>
           </select>
           <svg class="pointer-events-none absolute right-0" width="10" height="6" viewBox="0 0 10 6" fill="#888"><path d="M0 0l5 6 5-6z"/></svg>
@@ -263,8 +263,8 @@ interface FileItem {
 
 /* ── State ── */
 const store = new Map<string, FileItem>();
-let quality = 80;
-let outputFormat = 'png';
+let quality = 20;
+let outputFormat = 'webp';
 let isDragActive = false;
 let recompressTimer: ReturnType<typeof setTimeout> | null = null;
 
