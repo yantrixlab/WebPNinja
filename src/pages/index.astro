@@ -1,11 +1,76 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Compressor from '../components/Compressor.astro';
+import Features from '../components/Features.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import FAQ from '../components/FAQ.astro';
+import GlobalStats from '../components/GlobalStats.astro';
+import WordPressPlugin from '../components/WordPressPlugin.astro';
+import Footer from '../components/Footer.astro';
+import { faqs } from '../data/faq';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+
+const softwareAppSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "WebP Ninja",
+  "applicationCategory": "Utility",
+  "operatingSystem": "Any (Web Browser)",
+  "description": "Compress PNG, JPEG, WebP and GIF images instantly in your browser. 100% private — your files never leave your device. No limits, no sign-up.",
+  "url": siteUrl,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+  },
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map((f) => ({
+    "@type": "Question",
+    "name": f.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": f.a,
+    },
+  })),
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "WebP Ninja",
+  "url": siteUrl,
+  "logo": new URL("/favicon.svg", Astro.site).toString(),
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "WebP Ninja",
+  "url": siteUrl,
+};
 ---
 
 <Layout>
-	<Welcome />
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(softwareAppSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+  </Fragment>
+  <Nav />
+  <main>
+    <Compressor />
+    <GlobalStats />
+    <Features />
+    <HowItWorks />
+    <FAQ />
+    <WordPressPlugin />
+  </main>
+  <Footer />
 </Layout>

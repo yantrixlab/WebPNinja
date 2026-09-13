@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Brand Tokens (DESIGN.md) ── */
+  --color-ink: #171717;
+  --color-body: #4d4d4d;
+  --color-mute: #888888;
+  --color-hairline: #ebebeb;
+  --color-hairline-strong: #a1a1a1;
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #fafafa;
+  --color-canvas-soft-2: #f5f5f5;
+  --color-link: #0070f3;
+  --color-link-deep: #0761d1;
+  --color-success: #0070f3;
+  --color-error: #ee0000;
+  --color-cyan: #50e3c2;
+  --color-violet: #7928ca;
+  --color-pink: #ff0080;
+
+  /* ── Typography ── */
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Radius ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 100px;
+  --radius-full: 9999px;
+
+  /* ── Spacing ── */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 40px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+  --spacing-5xl: 96px;
+  --spacing-section: 192px;
+}
+
+/* ── Base resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #171717;
+  color: #f2f2f2;
+}
+
+/* ── Elevation helpers (stacked shadows per DESIGN.md) ── */
+.shadow-card {
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.08),
+    0px 1px 1px rgba(0,0,0,0.03),
+    0px 2px 2px rgba(0,0,0,0.04);
+}
+
+.shadow-card-md {
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.08),
+    0px 2px 2px rgba(0,0,0,0.04),
+    0px 8px 8px -8px rgba(0,0,0,0.04);
+}
+
+.shadow-card-lg {
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.08),
+    0px 2px 2px rgba(0,0,0,0.04),
+    0px 8px 16px -4px rgba(0,0,0,0.06);
+}
+
+/* ── Mesh gradient (Vercel-style atmospheric) ── */
+.mesh-gradient {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 55%, rgba(0,124,240,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 60% at 85% 25%, rgba(121,40,202,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 55% 85%, rgba(255,0,128,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 45% 5%, rgba(0,223,216,0.10) 0%, transparent 70%);
+}
+
+/* ── Spin animation ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Slide-in animation for file cards ── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out forwards;
+}
+
+/* ── Progress bar fill ── */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+.progress-bar {
+  animation: fill-bar 0.4s ease-out forwards;
+}
+
+/* ── Hero gradient text ── */
+.hero-gradient-text {
+  background-image: linear-gradient(135deg, #0070f3 0%, #7928ca 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Dropzone surface: card look + gradient border on hover ── */
+.dropzone-surface {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 2px dashed #e2e2e2;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.dropzone-surface:hover {
+  border-color: #0070f3;
+  border-style: solid;
+  box-shadow: 0 0 0 4px rgba(0,112,243,0.08), 0 4px 32px rgba(0,112,243,0.10);
+  background: rgba(255,255,255,0.96);
+}
+
+/* ── Ping animation for eyebrow dot ── */
+@keyframes ping-slow {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(2); opacity: 0; }
+}
+.animate-ping-slow {
+  animation: ping-slow 2.5s ease-in-out infinite;
+}
+
+/* ── Custom range input ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-track {
+  background: #ebebeb;
+  height: 4px;
+  border-radius: 99px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #171717;
+  margin-top: -6px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #171717;
+}
+input[type="range"]::-moz-range-track {
+  background: #ebebeb;
+  height: 4px;
+  border-radius: 99px;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #171717;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #171717;
+}

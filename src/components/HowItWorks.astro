@@ -1,0 +1,90 @@
+---
+const steps = [
+  {
+    number: "01",
+    title: "Drop your images",
+    body: "Drag & drop any image onto the page, click to open your file picker, or paste with Ctrl+V. PNG, JPEG, WebP, AVIF, GIF — all accepted.",
+    icon: `<svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  },
+  {
+    number: "02",
+    title: "Adjust quality & format",
+    body: "Use the quality slider to balance size vs. fidelity. Switch output format — WebP for maximum savings, JPEG for compatibility, PNG for transparency.",
+    icon: `<svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
+  },
+  {
+    number: "03",
+    title: "Download in one click",
+    body: "Download individual files or hit Download All to get everything as a ZIP. Files are ready instantly — no waiting, no email, no sign-up.",
+    icon: `<svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/></svg>`,
+  },
+];
+---
+
+<section id="how-it-works" class="bg-[#171717] py-24 px-6">
+  <div class="max-w-[1400px] mx-auto">
+
+    <!-- Section header -->
+    <div class="mb-16 flex flex-col items-center text-center">
+      <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
+        # How it works
+      </p>
+      <h2 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-white max-w-[480px]">
+        Three steps. Zero friction.
+      </h2>
+      <p class="mt-4 text-[16px] leading-[24px] text-[#888888] max-w-[400px]">
+        The fastest path from heavy image to optimized file on the internet.
+      </p>
+    </div>
+
+    <!-- Steps -->
+    <div class="grid gap-px sm:grid-cols-3 bg-[#333333] rounded-[16px] overflow-hidden">
+      {steps.map((step, i) => (
+        <div class="bg-[#171717] p-8 flex flex-col gap-6 relative">
+          <!-- Step number (background) -->
+          <span class="absolute top-6 right-6 font-mono text-[48px] font-bold text-[#ffffff08] leading-none select-none">
+            {step.number}
+          </span>
+
+          <!-- Icon circle -->
+          <div class="w-12 h-12 rounded-full border border-[#333333] flex items-center justify-center text-white">
+            <Fragment set:html={step.icon} />
+          </div>
+
+          <!-- Content -->
+          <div class="flex flex-col gap-2">
+            <h3 class="text-[18px] font-semibold leading-[28px] tracking-[-0.4px] text-white">
+              {step.title}
+            </h3>
+            <p class="text-[14px] leading-[22px] text-[#888888]">
+              {step.body}
+            </p>
+          </div>
+
+          <!-- Connector arrow (between steps on desktop) -->
+          {i < steps.length - 1 && (
+            <div class="hidden sm:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
+              <svg width="24" height="24" fill="none" stroke="#444" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- CTA -->
+    <div class="mt-12 flex justify-center">
+      <a
+        href="#compressor"
+        class="inline-flex items-center gap-2 px-6 py-3 text-[16px] font-medium text-[#171717] bg-white rounded-full hover:bg-[#f5f5f5] transition-colors shadow-card"
+      >
+        Try it now — it's free
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+</section>

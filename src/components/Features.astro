@@ -1,0 +1,109 @@
+---
+const features = [
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    tag: "Privacy-first",
+    title: "Your files never leave your device.",
+    body: "All compression happens directly in your browser using the Canvas API. Zero server uploads. Zero data collection. Your images stay yours — always.",
+    highlight: "100% private",
+    color: "#0070f3",
+  },
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+    tag: "No limits",
+    title: "Compress as many files as you want.",
+    body: "TinyPNG caps you at 20 images and 5 MB each. We don't. Drop 500 screenshots at once — we handle every single one, any size, for free.",
+    highlight: "Unlimited files",
+    color: "#7928ca",
+  },
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    tag: "Smart conversion",
+    title: "Convert to WebP and AVIF instantly.",
+    body: "WebP is up to 34% smaller than JPEG and 26% smaller than PNG. Choose your output format — JPEG, PNG, WebP, or AVIF — and we'll handle the conversion.",
+    highlight: "4 output formats",
+    color: "#50e3c2",
+  },
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+    tag: "Clipboard magic",
+    title: "Paste screenshots straight from Ctrl+V.",
+    body: "Take a screenshot, hit Ctrl+V on this page, and it compresses instantly. No saving to disk, no file picker. The fastest workflow of any image compressor.",
+    highlight: "Ctrl+V support",
+    color: "#ff0080",
+  },
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/></svg>`,
+    tag: "Batch download",
+    title: "One click to download everything as a ZIP.",
+    body: "Stop clicking download 47 times. When you're done compressing, hit Download All and get every file packed into a single ZIP — no waiting, no account required.",
+    highlight: "ZIP download",
+    color: "#f5a623",
+  },
+  {
+    icon: `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+    tag: "Quality control",
+    title: "Fine-tune compression with a live slider.",
+    body: "Drag the quality slider and your files recompress in real time. See the new file size before you download. No guessing, no trial and error.",
+    highlight: "Real-time preview",
+    color: "#171717",
+  },
+];
+---
+
+<section id="features" class="bg-[#fafafa] py-24 px-6">
+  <div class="max-w-[1400px] mx-auto">
+
+    <!-- Section header -->
+    <div class="mb-16 flex flex-col items-center text-center">
+      <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
+        # Why WebP Ninja
+      </p>
+      <h2 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] max-w-[560px]">
+        Everything you need. Nothing you don't.
+      </h2>
+      <p class="mt-4 text-[16px] leading-[24px] text-[#4d4d4d] max-w-[480px]">
+        We built the tool we always wanted — fast, private, unlimited, and beautiful.
+      </p>
+    </div>
+
+    <!-- Feature grid -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => (
+        <div class="bg-[#ffffff] rounded-[12px] p-6 shadow-card hover:shadow-card-md transition-shadow group">
+          <!-- Icon + Tag -->
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
+              style={`background: ${f.color}12; color: ${f.color}`}
+              set:html={f.icon}
+            />
+            <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-[#888888]">
+              {f.tag}
+            </span>
+          </div>
+
+          <!-- Title -->
+          <h3 class="text-[16px] font-semibold leading-[24px] tracking-[-0.3px] text-[#171717] mb-2">
+            {f.title}
+          </h3>
+
+          <!-- Body -->
+          <p class="text-[14px] leading-[20px] text-[#4d4d4d] mb-4">
+            {f.body}
+          </p>
+
+          <!-- Highlight pill -->
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[11px] font-semibold rounded-full"
+            style={`background: ${f.color}15; color: ${f.color}`}
+          >
+            <span class="w-1.5 h-1.5 rounded-full" style={`background:${f.color}`}></span>
+            {f.highlight}
+          </span>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>

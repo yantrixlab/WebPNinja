@@ -1,0 +1,112 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[10px] p-4 text-[13px] font-mono leading-[20px] overflow-x-auto";
+---
+
+<Layout
+  title="Developer API Docs — WebP Ninja"
+  description="REST API reference for the WebP Ninja Developer API: authentication, endpoints, quotas, and example requests."
+>
+  <Nav />
+  <main class="max-w-[760px] mx-auto px-6 py-24">
+    <h1 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] mb-4">
+      Developer API
+    </h1>
+    <p class="text-[16px] leading-[26px] text-[#4d4d4d] mb-12 max-w-[560px]">
+      A REST API for server-side image compression — for automation, backends, and pipelines.
+      This is a separate product from the free browser tool above: requests here are
+      processed on our servers (in memory, never persisted to disk), gated by an API key
+      tied to your plan. Get a key from the <a href="/dashboard" class="text-[#0070f3] hover:underline">dashboard</a>.
+    </p>
+
+    <div class="flex flex-col gap-10 text-[15px] leading-[24px] text-[#4d4d4d]">
+      <section>
+        <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Authentication</h2>
+        <p class="mb-3">
+          Pass your API key as a bearer token on every request:
+        </p>
+        <pre class={codeBlock}>Authorization: Bearer webpninja_live_&lt;your_key&gt;</pre>
+      </section>
+
+      <section>
+        <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Compress an image</h2>
+        <p class="mb-3">
+          <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">POST /api/v1/compress</code>
+          — multipart form upload. Returns the compressed image bytes with the matching
+          <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">Content-Type</code>.
+        </p>
+        <table class="w-full text-[13px] mb-4 border-collapse">
+          <thead>
+            <tr class="border-b border-[#ebebeb] text-left">
+              <th class="py-2 pr-4 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Field</th>
+              <th class="py-2 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-[#ebebeb]">
+              <td class="py-2 pr-4 font-mono">file</td>
+              <td class="py-2">The image to compress (multipart file field). Any format sharp can decode.</td>
+            </tr>
+            <tr class="border-b border-[#ebebeb]">
+              <td class="py-2 pr-4 font-mono">format</td>
+              <td class="py-2">Output format: <code class="font-mono">webp</code>, <code class="font-mono">jpeg</code>, <code class="font-mono">png</code>, or <code class="font-mono">avif</code>.</td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-4 font-mono">quality</td>
+              <td class="py-2">10–100, default 80. Same compression settings as the browser tool at the same quality.</td>
+            </tr>
+          </tbody>
+        </table>
+        <pre class={codeBlock}>{`curl -X POST https://api.webpninja.com/api/v1/compress \\
+  -H "Authorization: Bearer webpninja_live_your_key" \\
+  -F "file=@photo.png" \\
+  -F "format=webp" \\
+  -F "quality=75" \\
+  --output photo.webp`}</pre>
+      </section>
+
+      <section>
+        <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Quotas &amp; rate limits</h2>
+        <p>
+          Each plan includes a monthly compression quota that resets at the start of your
+          billing period. Exceeding it returns <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">429 Too Many Requests</code>.
+          See current plan quotas and your usage on the <a href="/dashboard" class="text-[#0070f3] hover:underline">dashboard</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Errors</h2>
+        <table class="w-full text-[13px] border-collapse">
+          <thead>
+            <tr class="border-b border-[#ebebeb] text-left">
+              <th class="py-2 pr-4 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Status</th>
+              <th class="py-2 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-[#ebebeb]">
+              <td class="py-2 pr-4 font-mono">400</td>
+              <td class="py-2">Missing file, or an invalid format/quality value.</td>
+            </tr>
+            <tr class="border-b border-[#ebebeb]">
+              <td class="py-2 pr-4 font-mono">401</td>
+              <td class="py-2">Missing, invalid, or revoked API key.</td>
+            </tr>
+            <tr class="border-b border-[#ebebeb]">
+              <td class="py-2 pr-4 font-mono">422</td>
+              <td class="py-2">The file couldn't be decoded or compressed.</td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-4 font-mono">429</td>
+              <td class="py-2">Monthly quota exceeded for your plan.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>

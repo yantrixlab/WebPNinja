@@ -1,0 +1,905 @@
+---
+---
+
+<!-- ══════════════ HERO + DROP ZONE ══════════════ -->
+<section
+  id="compressor"
+  class="relative min-h-[calc(100vh-64px)] flex flex-col items-center justify-center overflow-hidden"
+>
+  <!-- Mesh gradient backdrop -->
+  <div class="absolute inset-0 mesh-gradient pointer-events-none" aria-hidden="true"></div>
+
+  <!-- Decorative soft blobs -->
+  <div class="absolute top-[10%] left-[5%] w-80 h-80 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,112,243,0.07) 0%,transparent 70%);filter:blur(40px)"></div>
+  <div class="absolute bottom-[15%] right-[5%] w-72 h-72 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(121,40,202,0.07) 0%,transparent 70%);filter:blur(40px)"></div>
+  <div class="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(80,227,194,0.04) 0%,transparent 65%);filter:blur(60px)"></div>
+
+  <!-- Hero content (shrinks when files are present) -->
+  <div
+    id="hero-content"
+    class="relative z-10 w-full max-w-[700px] mx-auto px-6 flex flex-col items-center text-center transition-all duration-500"
+  >
+    <!-- Eyebrow pill -->
+    <div class="mb-8 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-[#e8e8e8]" style="box-shadow:0 1px 8px rgba(0,0,0,0.06)">
+      <span class="relative flex h-2 w-2 shrink-0">
+        <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full opacity-60" style="background:#50e3c2"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2" style="background:#50e3c2"></span>
+      </span>
+      <span class="text-[12px] font-medium text-[#555] tracking-wide">100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever</span>
+    </div>
+
+    <!-- Headline -->
+    <h1
+      id="hero-headline"
+      class="text-[64px] font-bold leading-[1.0] tracking-[-3.5px] text-[#111] mb-5 transition-all duration-500"
+    >
+      Compress images.<br />
+      <span class="hero-gradient-text">Keep quality.</span>
+    </h1>
+
+    <!-- Sub-copy -->
+    <p
+      id="hero-sub"
+      class="text-[17px] leading-[28px] text-[#666] max-w-[500px] mb-10 transition-all duration-500"
+    >
+      Up to <strong class="text-[#111] font-semibold">80% smaller</strong> in seconds — PNG, JPEG, WebP, AVIF and more.
+      Powered by MozJPEG & oxipng. Runs entirely in your browser.
+    </p>
+
+    <!-- Drop Zone -->
+    <div
+      id="dropzone"
+      class="w-full group cursor-pointer relative"
+      role="button"
+      tabindex="0"
+      aria-label="Click or drag images here to compress"
+    >
+      <div
+        id="dropzone-inner"
+        class="dropzone-surface relative w-full rounded-[20px] flex flex-col items-center justify-center gap-5 py-14 px-8 transition-all duration-250"
+      >
+        <!-- Upload icon -->
+        <div id="dz-icon"
+          class="w-[72px] h-[72px] rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-0.5"
+          style="background:linear-gradient(145deg,#eef4ff,#e0ecff);border:1.5px solid #c8dcff;box-shadow:0 4px 16px rgba(0,112,243,0.12)"
+        >
+          <svg width="30" height="30" fill="none" stroke="#0070f3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
+        </div>
+
+        <!-- Drop zone text -->
+        <div id="dz-text" class="flex flex-col items-center gap-2">
+          <p class="text-[16px] font-semibold text-[#111]">
+            Drop images here &nbsp;<span class="font-normal text-[#aaa]">or</span>&nbsp; <span class="text-[#0070f3]">browse files</span>
+          </p>
+          <p class="text-[13px] text-[#999]">
+            Paste&nbsp;<kbd class="px-1.5 py-0.5 text-[11px] font-mono bg-[#f3f3f3] border border-[#e8e8e8] rounded-[5px] text-[#555]">Ctrl+V</kbd>&nbsp;to compress screenshots instantly
+          </p>
+        </div>
+
+        <!-- Format badges -->
+        <div class="flex flex-wrap items-center justify-center gap-1.5">
+          {["PNG", "JPEG", "WebP", "GIF", "BMP", "AVIF"].map((fmt) => (
+            <span class="px-3 py-[5px] text-[11px] font-semibold tracking-wide text-[#777] bg-[#f5f5f5] border border-[#ebebeb] rounded-full">
+              {fmt}
+            </span>
+          ))}
+        </div>
+
+        <!-- Drag-over overlay (shown via JS) -->
+        <div
+          id="drag-overlay"
+          class="absolute inset-0 rounded-[18px] hidden flex-col items-center justify-center gap-4"
+          style="background:linear-gradient(135deg,rgba(0,112,243,0.05),rgba(121,40,202,0.05));border:2px solid #0070f3;box-shadow:0 0 0 4px rgba(0,112,243,0.1)"
+          aria-hidden="true"
+        >
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(0,112,243,0.1)">
+            <svg width="28" height="28" fill="none" stroke="#0070f3" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
+              <path d="M12 15V3m0 0-4 4m4-4 4 4"/>
+              <path d="M20 21H4"/>
+            </svg>
+          </div>
+          <p class="text-[17px] font-bold text-[#0070f3]">Release to compress</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" accept="image/*" multiple class="hidden" aria-hidden="true" />
+
+    <!-- Trust indicators -->
+    <div id="trust-row" class="mt-6 flex items-center gap-5 flex-wrap justify-center">
+      <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
+        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        No server uploads
+      </span>
+      <span class="w-px h-3 bg-[#e0e0e0]"></span>
+      <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
+        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Unlimited files &amp; sizes
+      </span>
+      <span class="w-px h-3 bg-[#e0e0e0]"></span>
+      <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
+        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        MozJPEG · oxipng · libwebp
+      </span>
+    </div>
+
+    <!-- Compact row placeholder (buttons moved to controls bar) -->
+    <div id="add-more-row" class="hidden"></div>
+  </div>
+</section>
+
+<!-- ══════════════ RESULTS SECTION ══════════════ -->
+<section id="results" class="hidden bg-[#f8f8f8]">
+
+  <!-- Controls bar -->
+  <div class="sticky top-[64px] z-40 border-b border-[#ebebeb]" style="background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
+    <div class="max-w-[1400px] mx-auto px-6 h-14 flex items-center gap-2">
+
+      <!-- Quality pill -->
+      <div class="flex items-center gap-2.5 h-9 px-3.5 rounded-[10px] bg-[#f5f5f5] border border-[#ebebeb]">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 22 12a10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2"/></svg>
+        <label for="quality" class="text-[11px] font-semibold text-[#888] uppercase tracking-[0.06em] whitespace-nowrap select-none">Quality</label>
+        <div class="w-px h-3.5 bg-[#e0e0e0]"></div>
+        <input
+          type="range"
+          id="quality"
+          min="10"
+          max="100"
+          value="80"
+          class="w-24 h-1 cursor-pointer"
+          style="accent-color:#171717"
+          aria-label="Compression quality"
+        />
+        <span id="quality-value" class="text-[13px] font-bold text-[#171717] w-9 tabular-nums text-right">80%</span>
+      </div>
+
+      <!-- Format pill -->
+      <div class="flex items-center gap-2 h-9 px-3.5 rounded-[10px] bg-[#f5f5f5] border border-[#ebebeb]">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <label for="format" class="text-[11px] font-semibold text-[#888] uppercase tracking-[0.06em] select-none">Format</label>
+        <div class="w-px h-3.5 bg-[#e0e0e0]"></div>
+        <div class="relative flex items-center">
+          <select
+            id="format"
+            class="h-7 pl-1 pr-6 text-[13px] font-bold text-[#171717] bg-transparent border-none cursor-pointer appearance-none focus:outline-none"
+            aria-label="Output format"
+          >
+            <option value="webp">WebP</option>
+            <option value="jpeg">JPEG</option>
+            <option value="png" selected>PNG</option>
+            <option value="avif">AVIF</option>
+          </select>
+          <svg class="pointer-events-none absolute right-0" width="10" height="6" viewBox="0 0 10 6" fill="#888"><path d="M0 0l5 6 5-6z"/></svg>
+        </div>
+      </div>
+
+      <!-- Add more / Clear (shown after upload) -->
+      <div id="bar-actions" class="hidden items-center gap-2">
+        <button
+          id="add-more-btn"
+          class="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-medium text-[#555] border border-[#e8e8e8] rounded-[10px] hover:border-[#171717] hover:text-[#171717] transition-colors bg-white"
+          style="box-shadow:0 1px 4px rgba(0,0,0,0.06)"
+        >
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Add more
+        </button>
+        <button
+          id="clear-btn"
+          class="inline-flex items-center gap-1.5 h-9 px-3 text-[13px] font-medium text-[#aaa] hover:text-[#ee0000] transition-colors"
+        >
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          Clear
+        </button>
+        <div class="w-px h-5 bg-[#e8e8e8]"></div>
+      </div>
+
+      <!-- Spacer -->
+      <div class="flex-1"></div>
+
+      <!-- Stats badge -->
+      <div id="stats" class="hidden items-center gap-2">
+        <div class="flex items-center gap-2 h-9 px-3.5 rounded-[10px] bg-[#f0f7ff] border border-[#d0e8ff]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0070f3" stroke-width="2.2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span id="file-count" class="text-[11px] font-semibold text-[#0070f3] uppercase tracking-[0.06em]">0 files</span>
+          <div class="w-px h-3.5 bg-[#c0d8f0]"></div>
+          <span id="total-saved" class="text-[13px] font-bold text-[#0070f3] tabular-nums"></span>
+        </div>
+      </div>
+
+      <!-- Download all -->
+      <button
+        id="download-all"
+        class="inline-flex items-center gap-2 h-9 px-4 text-[13px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+        style="background:#171717;box-shadow:0 1px 3px rgba(0,0,0,0.18),0 0 0 1px rgba(255,255,255,0.06) inset"
+        onmouseover="if(!this.disabled)this.style.background='#2a2a2a'"
+        onmouseout="this.style.background='#171717'"
+        disabled
+      >
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M12 15V3m0 12-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        Download all
+        <span class="px-1.5 py-0.5 text-[10px] font-bold bg-white/20 rounded-md">.zip</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- File grid -->
+  <div class="max-w-[1400px] mx-auto px-6 py-10">
+    <div
+      id="file-grid"
+      class="grid gap-5"
+      style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"
+    ></div>
+  </div>
+
+</section>
+
+<!-- ══════════════ CLIENT-SIDE COMPRESSOR SCRIPT ══════════════ -->
+<script>
+import JSZip from 'jszip';
+
+/* ── Types ── */
+interface FileItem {
+  file: File;
+  originalSize: number;
+  status: 'queued' | 'compressing' | 'done' | 'error';
+  blob: Blob | null;
+  outputMime: string;
+  savedPct: number;
+  objectUrl: string | null;
+  thumbUrl: string;
+  /** Bumped every time a compression is requested for this card; lets a
+   *  stale in-flight result (e.g. from before a quality/format change)
+   *  detect it's outdated and avoid overwriting a newer result. */
+  genId: number;
+}
+
+/* ── State ── */
+const store = new Map<string, FileItem>();
+let quality = 80;
+let outputFormat = 'png';
+let isDragActive = false;
+let recompressTimer: ReturnType<typeof setTimeout> | null = null;
+
+/* ── DOM refs ── */
+const dropzone        = document.getElementById('dropzone')!;
+const dropzoneInner   = document.getElementById('dropzone-inner')!;
+const dragOverlay     = document.getElementById('drag-overlay')!;
+const fileInput       = document.getElementById('file-input') as HTMLInputElement;
+const heroContent     = document.getElementById('hero-content')!;
+const heroHeadline    = document.getElementById('hero-headline')!;
+const heroSub         = document.getElementById('hero-sub')!;
+const addMoreRow      = document.getElementById('add-more-row')!;
+const barActions      = document.getElementById('bar-actions')!;
+const addMoreBtn      = document.getElementById('add-more-btn')!;
+const clearBtn        = document.getElementById('clear-btn')!;
+const resultsSection  = document.getElementById('results')!;
+const fileGrid        = document.getElementById('file-grid')!;
+const qualitySlider   = document.getElementById('quality') as HTMLInputElement;
+const qualityDisplay  = document.getElementById('quality-value')!;
+const formatSelect    = document.getElementById('format') as HTMLSelectElement;
+const downloadAllBtn  = document.getElementById('download-all') as HTMLButtonElement;
+const statsEl         = document.getElementById('stats')!;
+const fileCountEl     = document.getElementById('file-count')!;
+const totalSavedEl    = document.getElementById('total-saved')!;
+
+/* ══════════════ DRAG & DROP ══════════════ */
+
+let dragEnterCount = 0;
+
+document.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragEnterCount++;
+  if (!isDragActive) {
+    isDragActive = true;
+    dragOverlay.classList.remove('hidden');
+    dragOverlay.classList.add('flex');
+  }
+});
+
+document.addEventListener('dragleave', () => {
+  dragEnterCount--;
+  if (dragEnterCount <= 0) {
+    dragEnterCount = 0;
+    isDragActive = false;
+    dragOverlay.classList.add('hidden');
+    dragOverlay.classList.remove('flex');
+  }
+});
+
+document.addEventListener('dragover', (e) => e.preventDefault());
+
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragEnterCount = 0;
+  isDragActive = false;
+  dragOverlay.classList.add('hidden');
+  dragOverlay.classList.remove('flex');
+  if (e.dataTransfer?.files.length) addFiles(e.dataTransfer.files);
+});
+
+/* ══════════════ CLICK TO UPLOAD ══════════════ */
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+});
+
+addMoreBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files?.length) {
+    addFiles(fileInput.files);
+    fileInput.value = '';
+  }
+});
+
+/* ══════════════ CLIPBOARD PASTE ══════════════ */
+
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  const pastedFiles: File[] = [];
+  for (const item of Array.from(items)) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        const named = new File([file], `screenshot-${Date.now()}.png`, { type: file.type });
+        pastedFiles.push(named);
+      }
+    }
+  }
+  if (pastedFiles.length) {
+    const dt = new DataTransfer();
+    pastedFiles.forEach(f => dt.items.add(f));
+    addFiles(dt.files);
+  }
+});
+
+/* ══════════════ ADD FILES ══════════════ */
+
+async function addFiles(fileList: FileList) {
+  const accepted = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  if (!accepted.length) return;
+
+  // Switch UI to compact hero mode
+  transitionToCompact();
+
+  for (const file of accepted) {
+    const id = crypto.randomUUID();
+    const thumbUrl = URL.createObjectURL(file);
+    const item: FileItem = {
+      file,
+      originalSize: file.size,
+      status: 'queued',
+      blob: null,
+      outputMime: getMime(file.type, outputFormat),
+      savedPct: 0,
+      objectUrl: null,
+      thumbUrl,
+      genId: 0,
+    };
+    store.set(id, item);
+    appendCard(id, file, thumbUrl);
+  }
+
+  updateStats();
+
+  // Compress all queued items
+  for (const [id, item] of store) {
+    if (item.status === 'queued') {
+      compressFile(id);
+    }
+  }
+}
+
+/* ══════════════ COMPRESSION ══════════════ */
+
+async function compressFile(id: string) {
+  const item = store.get(id);
+  if (!item) return;
+
+  // Snapshot the settings AND a generation token at call time. If quality/
+  // format change again before this resolves, a newer compressFile call
+  // bumps genId — and this stale result gets discarded instead of
+  // overwriting the card with outdated output.
+  const myGen = ++item.genId;
+  const myQuality = quality;
+  const myFormat = outputFormat;
+
+  item.status = 'compressing';
+  setCardLoading(id, true);
+
+  try {
+    const mime = getMime(item.file.type, myFormat);
+    const blob = await compress(item.file, myQuality, mime);
+
+    // A newer compression was requested while this one was in flight — drop it.
+    if (item.genId !== myGen) return;
+
+    item.outputMime = mime;
+    if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+    item.objectUrl = URL.createObjectURL(blob);
+    item.blob = blob;
+    item.status = 'done';
+    item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
+
+    setCardDone(id, blob, item.savedPct);
+    updateStats();
+    window.dispatchEvent(new CustomEvent('webpninja:compressed', { detail: { count: 1 } }));
+  } catch (err) {
+    if (item.genId !== myGen) return;
+    console.error('[compress]', err);
+    item.status = 'error';
+    setCardError(id);
+  }
+}
+
+function getMime(inputMime: string, fmt: string): string {
+  const map: Record<string, string> = {
+    webp: 'image/webp',
+    jpeg: 'image/jpeg',
+    png:  'image/png',
+    avif: 'image/avif',
+  };
+  return map[fmt] ?? inputMime ?? 'image/webp';
+}
+
+/* ── WASM codec cache (lazy-loaded on first use) ── */
+let _jpegEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
+let _webpEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
+let _avifEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
+let _pngEncode:  ((d: ImageData) => Promise<ArrayBuffer>) | null = null;
+let _oxipng:     ((d: ArrayBuffer, o?: any) => Promise<ArrayBuffer>) | null = null;
+
+function getImageData(file: File): Promise<ImageData> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      resolve(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
+/* Quantize to a reduced color palette with Floyd-Steinberg dithering —
+   same technique as pngquant / TinyPNG. quality 0-100 maps to 8-256 colors. */
+async function quantizeImageData(imageData: ImageData, quality: number): Promise<ImageData> {
+  const iq = await import('image-q');
+  const numColors = Math.max(8, Math.min(256, Math.round(8 + (quality / 100) * 248)));
+
+  const inContainer = iq.utils.PointContainer.fromImageData(imageData);
+  const palette = await iq.buildPalette([inContainer], {
+    colors: numColors,
+    colorDistanceFormula: 'euclidean',
+    paletteQuantization: 'wuquant',
+  });
+  const outContainer = await iq.applyPalette(inContainer, palette, {
+    colorDistanceFormula: 'euclidean',
+    imageQuantization: 'floyd-steinberg',
+  });
+
+  const rgba = outContainer.toUint8Array();
+  return new ImageData(new Uint8ClampedArray(rgba.buffer), imageData.width, imageData.height);
+}
+
+async function compress(file: File, q: number, mime: string): Promise<Blob> {
+  const imageData = await getImageData(file);
+  let buffer: ArrayBuffer;
+
+  try {
+    switch (mime) {
+      case 'image/jpeg': {
+        if (!_jpegEncode) _jpegEncode = (await import('@jsquash/jpeg/encode')).default;
+        buffer = await _jpegEncode(imageData, { quality: q });
+        break;
+      }
+      case 'image/webp': {
+        if (!_webpEncode) _webpEncode = (await import('@jsquash/webp/encode')).default;
+        // method: 0-6, higher = slower but much denser encoding (libwebp default is 4)
+        buffer = await _webpEncode(imageData, { quality: q, method: 6, sns_strength: 90, filter_strength: 60 });
+        break;
+      }
+      case 'image/avif': {
+        if (!_avifEncode) _avifEncode = (await import('@jsquash/avif/encode')).default;
+        buffer = await _avifEncode(imageData, { quality: q, speed: 6 });
+        break;
+      }
+      case 'image/png': {
+        if (!_pngEncode) _pngEncode = (await import('@jsquash/png/encode')).default;
+        if (!_oxipng)    _oxipng    = (await import('@jsquash/oxipng/optimise')).default;
+        // Lossy quantization (pngquant-style) → lossless oxipng deflate optimization
+        const quantized = await quantizeImageData(imageData, q);
+        const pngBuf    = await _pngEncode(quantized);
+        buffer = await _oxipng(pngBuf, { level: 4 });
+        break;
+      }
+      default:
+        return canvasFallback(file, q, mime);
+    }
+  } catch (err) {
+    console.warn('[compress] codec failed, falling back to canvas:', err);
+    return canvasFallback(file, q, mime);
+  }
+
+  return new Blob([buffer], { type: mime });
+}
+
+function canvasFallback(file: File, q: number, mime: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d')!;
+      if (mime === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+      ctx.drawImage(img, 0, 0);
+      const qArg = mime === 'image/png' ? undefined : q / 100;
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('toBlob returned null')),
+        mime, qArg,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
+/* ══════════════ CARD UI ══════════════ */
+
+function appendCard(id: string, file: File, thumbUrl: string) {
+  const card = document.createElement('div');
+  card.id = `card-${id}`;
+  card.className = 'animate-slide-up bg-white rounded-[16px] overflow-hidden flex flex-col border border-[#f0f0f0] shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)] transition-all duration-200';
+
+  card.innerHTML = `
+    <!-- Thumbnail -->
+    <div class="relative bg-[#f7f7f7] overflow-hidden" style="aspect-ratio:4/3">
+      <img
+        src="${thumbUrl}"
+        alt="${escHtml(file.name)}"
+        class="w-full h-full object-contain p-4"
+        onload="URL.revokeObjectURL(this.src)"
+      />
+      <!-- Spinner overlay -->
+      <div id="spinner-${id}" class="absolute inset-0 bg-white/90 backdrop-blur-[3px] flex flex-col items-center justify-center gap-3">
+        <div class="w-9 h-9 border-[2.5px] border-[#e0e0e0] border-t-[#171717] rounded-full animate-spin"></div>
+        <span class="text-[11px] font-mono text-[#888888] tracking-wider">COMPRESSING</span>
+      </div>
+      <!-- Savings badge -->
+      <div id="badge-${id}" class="hidden absolute top-3 left-3"></div>
+    </div>
+
+    <!-- Info -->
+    <div class="p-5 flex flex-col gap-3 flex-1">
+      <!-- File name -->
+      <p class="flex items-center gap-1.5 min-w-0" title="${escHtml(file.name)}">
+        <span id="filename-${id}" class="text-[13px] font-semibold text-[#171717] truncate leading-tight">${escHtml(file.name.replace(/\.[^.]+$/, ''))}</span>
+        <span id="fileext-${id}" class="text-[10px] font-bold uppercase tracking-wide text-[#999] bg-[#f0f0f0] px-1.5 py-0.5 rounded-md shrink-0">${(file.name.match(/\.([^.]+)$/)?.[1] ?? '').toUpperCase()}</span>
+      </p>
+
+      <!-- Size stats -->
+      <div id="meta-${id}" class="text-[12px] font-mono text-[#aaaaaa]">${formatBytes(file.size)}</div>
+
+      <!-- Progress bar -->
+      <div id="progress-${id}" class="h-[3px] rounded-full bg-[#f0f0f0] overflow-hidden">
+        <div class="h-full bg-[#e0e0e0] rounded-full w-full animate-pulse"></div>
+      </div>
+
+      <!-- Actions -->
+      <div id="actions-${id}" class="mt-0.5"></div>
+    </div>
+  `;
+
+  fileGrid.appendChild(card);
+}
+
+function setCardLoading(id: string, loading: boolean) {
+  const spinner = document.getElementById(`spinner-${id}`);
+  if (spinner) {
+    spinner.style.display = loading ? 'flex' : 'none';
+  }
+}
+
+function setCardDone(id: string, blob: Blob, savedPct: number) {
+  const item = store.get(id);
+  if (!item) return;
+
+  setCardLoading(id, false);
+
+  // Extension badge — reflect the actual output format, not the original file's
+  const extEl = document.getElementById(`fileext-${id}`);
+  if (extEl) {
+    const ext = mimeToExt(item.outputMime).toUpperCase();
+    extEl.textContent = ext;
+    extEl.className = 'text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md shrink-0 text-white';
+    extEl.style.background = ext === 'WEBP' ? '#7928ca' : ext === 'AVIF' ? '#00897b' : ext === 'JPG' ? '#ff6b00' : '#0070f3';
+  }
+
+  // Badge — positioned top-left of thumbnail
+  const badge = document.getElementById(`badge-${id}`);
+  if (badge) {
+    const bg = savedPct >= 60 ? 'linear-gradient(135deg,#00c853,#00897b)'
+             : savedPct >= 30 ? 'linear-gradient(135deg,#0070f3,#00b4d8)'
+             : 'linear-gradient(135deg,#888,#aaa)';
+    badge.innerHTML = `<span class="inline-flex items-center px-2.5 py-1 text-[11px] font-mono font-bold text-white rounded-lg shadow-sm" style="background:${bg}; letter-spacing:0.02em">−${savedPct}%</span>`;
+    badge.classList.remove('hidden');
+  }
+
+  // Meta — clear before/after layout
+  const meta = document.getElementById(`meta-${id}`);
+  if (meta) {
+    const accentColor = savedPct >= 30 ? '#0070f3' : '#888888';
+    meta.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-[#bbbbbb] line-through">${formatBytes(item.originalSize)}</span>
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#cccccc" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span class="text-[#171717] font-semibold text-[13px]">${formatBytes(blob.size)}</span>
+        <span class="ml-auto font-bold text-[13px]" style="color:${accentColor}">−${savedPct}%</span>
+      </div>
+    `;
+  }
+
+  // Progress bar → filled
+  const progress = document.getElementById(`progress-${id}`);
+  if (progress) {
+    const barColor = savedPct >= 60 ? '#00c853'
+                   : savedPct >= 30 ? '#0070f3'
+                   : '#aaaaaa';
+    progress.innerHTML = `<div class="h-full rounded-full transition-all duration-700" style="width:${savedPct}%;background:${barColor}"></div>`;
+  }
+
+  // Actions
+  const actions = document.getElementById(`actions-${id}`);
+  if (actions) {
+    const ext = mimeToExt(item.outputMime);
+    const baseName = item.file.name.replace(/\.[^.]+$/, '');
+    actions.innerHTML = `
+      <button
+        data-download-id="${id}"
+        class="w-full inline-flex items-center justify-center gap-2 h-10 px-4 text-[13px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98]"
+        style="background:#171717"
+        onmouseover="this.style.background='#333'"
+        onmouseout="this.style.background='#171717'"
+      >
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M12 15V3m0 12-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        Download .${ext}
+      </button>
+    `;
+  }
+
+  enableDownloadAll();
+}
+
+function setCardError(id: string) {
+  setCardLoading(id, false);
+  const meta = document.getElementById(`meta-${id}`);
+  const progress = document.getElementById(`progress-${id}`);
+  if (meta) meta.innerHTML = `<span class="text-[#ee0000]">Failed — unsupported format</span>`;
+  if (progress) progress.innerHTML = '';
+}
+
+/* ══════════════ DELEGATED DOWNLOAD CLICK ══════════════ */
+
+fileGrid.addEventListener('click', (e) => {
+  const btn = (e.target as Element).closest('[data-download-id]') as HTMLElement | null;
+  if (!btn) return;
+  const id = btn.dataset.downloadId!;
+  downloadFile(id);
+});
+
+/* ══════════════ STATS ══════════════ */
+
+function updateStats() {
+  let totalOrig = 0, totalComp = 0, doneCount = 0;
+  for (const [, item] of store) {
+    if (item.status === 'done' && item.blob) {
+      totalOrig += item.originalSize;
+      totalComp += item.blob.size;
+      doneCount++;
+    }
+  }
+
+  fileCountEl.textContent = `${store.size} file${store.size !== 1 ? 's' : ''}`;
+
+  if (doneCount > 0) {
+    const saved = totalOrig - totalComp;
+    const pct = Math.round((saved / totalOrig) * 100);
+    totalSavedEl.textContent = `Saved ${formatBytes(saved)} (${pct}% smaller)`;
+    statsEl.classList.remove('hidden');
+    statsEl.classList.add('flex');
+  }
+}
+
+/* ══════════════ DOWNLOAD ══════════════ */
+
+function downloadFile(id: string) {
+  const item = store.get(id);
+  if (!item?.blob || !item.objectUrl) return;
+  const ext = mimeToExt(item.outputMime);
+  const baseName = item.file.name.replace(/\.[^.]+$/, '');
+  const a = document.createElement('a');
+  a.href = item.objectUrl;
+  a.download = `${baseName}-tiny.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function downloadAll() {
+  const zip = new JSZip();
+  let count = 0;
+  for (const [id, item] of store) {
+    if (item.status === 'done' && item.blob) {
+      const ext = mimeToExt(item.outputMime);
+      const baseName = item.file.name.replace(/\.[^.]+$/, '');
+      zip.file(`${baseName}-tiny.${ext}`, item.blob);
+      count++;
+    }
+  }
+  if (!count) return;
+
+  downloadAllBtn.textContent = 'Preparing ZIP…';
+  downloadAllBtn.disabled = true;
+
+  try {
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'webpninja-compressed.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } finally {
+    downloadAllBtn.innerHTML = `
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 15V3m0 12-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+      </svg>
+      Download all (.zip)
+    `;
+    downloadAllBtn.disabled = false;
+  }
+}
+
+downloadAllBtn.addEventListener('click', downloadAll);
+
+function enableDownloadAll() {
+  downloadAllBtn.disabled = false;
+}
+
+/* ══════════════ QUALITY & FORMAT CHANGES ══════════════ */
+
+qualitySlider.addEventListener('input', () => {
+  quality = Number(qualitySlider.value);
+  qualityDisplay.textContent = `${quality}%`;
+  scheduleRecompress();
+});
+
+formatSelect.addEventListener('change', () => {
+  outputFormat = formatSelect.value;
+
+  // WebP compresses far more aggressively than other formats at the same
+  // quality value, so default to a much lower quality when switching to it.
+  if (outputFormat === 'webp') {
+    quality = 20;
+    qualitySlider.value = String(quality);
+    qualityDisplay.textContent = `${quality}%`;
+  }
+
+  scheduleRecompress();
+});
+
+function scheduleRecompress() {
+  if (recompressTimer) clearTimeout(recompressTimer);
+  recompressTimer = setTimeout(recompressAll, 400);
+}
+
+async function recompressAll() {
+  for (const [id, item] of store) {
+    if (item.file && item.status !== 'error') {
+      item.status = 'queued';
+      resetCardForRecompress(id);
+      await compressFile(id);
+    }
+  }
+}
+
+function resetCardForRecompress(id: string) {
+  const badge = document.getElementById(`badge-${id}`);
+  const progress = document.getElementById(`progress-${id}`);
+  const actions = document.getElementById(`actions-${id}`);
+  if (badge) { badge.innerHTML = ''; badge.classList.add('hidden'); }
+  if (progress) progress.innerHTML = `<div class="h-full bg-[#ebebeb] rounded-full w-full animate-pulse"></div>`;
+  if (actions) actions.innerHTML = '';
+  setCardLoading(id, true);
+}
+
+/* ══════════════ CLEAR ══════════════ */
+
+clearBtn.addEventListener('click', () => {
+  for (const [, item] of store) {
+    if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+    if (item.thumbUrl) URL.revokeObjectURL(item.thumbUrl);
+  }
+  store.clear();
+  fileGrid.innerHTML = '';
+  resultsSection.classList.add('hidden');
+  statsEl.classList.add('hidden');
+  statsEl.classList.remove('flex');
+  downloadAllBtn.disabled = true;
+  transitionToFull();
+});
+
+/* ══════════════ HERO TRANSITION ══════════════ */
+
+function transitionToCompact() {
+  // Hide entire hero, show only results
+  heroContent.classList.add('!hidden');
+  document.getElementById('compressor')!.classList.add('!min-h-0');
+  resultsSection.classList.remove('hidden');
+
+  // Show add-more / clear in the controls bar
+  barActions.classList.remove('hidden');
+  barActions.classList.add('flex');
+
+  // Scroll to top so the sticky controls bar is at the top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function transitionToFull() {
+  heroContent.classList.remove('!hidden');
+  document.getElementById('compressor')!.classList.remove('!min-h-0');
+
+  barActions.classList.add('hidden');
+  barActions.classList.remove('flex');
+}
+
+/* ══════════════ HELPERS ══════════════ */
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function mimeToExt(mime: string): string {
+  const map: Record<string, string> = {
+    'image/webp': 'webp',
+    'image/jpeg': 'jpg',
+    'image/png':  'png',
+    'image/avif': 'avif',
+    'image/gif':  'gif',
+  };
+  return map[mime] ?? 'img';
+}
+
+function escHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]!));
+}
+</script>

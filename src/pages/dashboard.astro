@@ -1,0 +1,351 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID ?? '';
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
+---
+
+<Layout
+  title="Dashboard — WebP Ninja"
+  description="Sign in, manage your API key, and view your Developer API plan and usage."
+  noindex
+>
+  <Nav />
+  <main class="max-w-[720px] mx-auto px-6 py-24">
+    <h1 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] mb-2">
+      Developer Dashboard
+    </h1>
+    <p class="text-[16px] leading-[24px] text-[#4d4d4d] mb-10 max-w-[520px]">
+      Sign in with Google to manage your API key and plan for the
+      <a href="/docs" class="text-[#0070f3] hover:underline">WebP Ninja Developer API</a>.
+    </p>
+
+    <div id="dash-loading" class="text-[14px] text-[#888888]">Loading…</div>
+
+    <!-- Signed out -->
+    <div id="dash-signed-out" class="hidden">
+      <div class="p-8 rounded-[16px] bg-white border border-[#ebebeb] flex flex-col items-center gap-4 text-center">
+        <p class="text-[15px] text-[#4d4d4d]">Sign in with your Google account to continue.</p>
+        <div id="google-signin-button"></div>
+      </div>
+    </div>
+
+    <!-- Signed in -->
+    <div id="dash-signed-in" class="hidden flex-col gap-6">
+      <!-- Profile -->
+      <div class="p-5 rounded-[16px] bg-white border border-[#ebebeb] flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <img id="dash-avatar" src="" alt="" class="w-10 h-10 rounded-full bg-[#f5f5f5]" />
+          <div>
+            <p id="dash-name" class="text-[14px] font-semibold text-[#171717]"></p>
+            <p id="dash-email" class="text-[13px] text-[#888888]"></p>
+          </div>
+        </div>
+        <button
+          id="dash-signout"
+          class="text-[13px] font-medium text-[#4d4d4d] hover:text-[#171717] px-3 py-1.5 rounded-full hover:bg-[#f5f5f5] transition-colors"
+        >
+          Sign out
+        </button>
+      </div>
+
+      <!-- Plan + usage -->
+      <div class="p-6 rounded-[16px] bg-white border border-[#ebebeb]">
+        <p class="font-mono text-[11px] text-[#888888] uppercase tracking-wider mb-3">Current Plan</p>
+        <div class="flex items-baseline justify-between mb-4">
+          <p id="dash-plan-name" class="text-[20px] font-semibold text-[#171717]">—</p>
+          <p id="dash-plan-price" class="text-[14px] text-[#888888]"></p>
+        </div>
+        <div class="h-2 rounded-full bg-[#f0f0f0] overflow-hidden mb-2">
+          <div id="dash-usage-bar" class="h-full bg-[#171717] rounded-full" style="width: 0%"></div>
+        </div>
+        <p id="dash-usage-label" class="text-[13px] text-[#888888]">— / — this period</p>
+      </div>
+
+      <!-- API key -->
+      <div class="p-6 rounded-[16px] bg-white border border-[#ebebeb]">
+        <p class="font-mono text-[11px] text-[#888888] uppercase tracking-wider mb-3">API Key</p>
+        <p id="dash-key-empty" class="text-[14px] text-[#4d4d4d] mb-4 hidden">
+          You don't have an API key yet. Generate one to start using the
+          <a href="/docs" class="text-[#0070f3] hover:underline">Developer API</a>.
+        </p>
+        <p id="dash-key-existing" class="text-[14px] text-[#4d4d4d] mb-4 hidden">
+          Active key: <code id="dash-key-prefix" class="font-mono text-[13px] bg-[#f5f5f5] px-2 py-1 rounded-[6px]"></code>
+        </p>
+        <div id="dash-key-raw-box" class="hidden mb-4 p-4 rounded-[10px] bg-[#fffbea] border border-[#f5e0a3]">
+          <p class="text-[12px] text-[#8a6d00] mb-2">
+            Copy this now — it won't be shown again.
+          </p>
+          <div class="flex items-center gap-2">
+            <code id="dash-key-raw" class="flex-1 font-mono text-[13px] text-[#171717] bg-white px-3 py-2 rounded-[6px] border border-[#ebebeb] overflow-x-auto"></code>
+            <button id="dash-key-copy" class="text-[13px] font-medium text-white bg-[#171717] px-3 py-2 rounded-[6px] hover:bg-[#333] transition-colors shrink-0">
+              Copy
+            </button>
+          </div>
+        </div>
+        <button
+          id="dash-key-generate"
+          class="inline-flex items-center h-9 px-4 text-[13px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors"
+        >
+          Generate API Key
+        </button>
+      </div>
+
+      <!-- Plans -->
+      <div class="p-6 rounded-[16px] bg-white border border-[#ebebeb]">
+        <p class="font-mono text-[11px] text-[#888888] uppercase tracking-wider mb-4">Plans</p>
+        <div id="dash-plans" class="grid gap-4 sm:grid-cols-3"></div>
+        <p id="dash-billing-status" class="text-[13px] mt-4 hidden"></p>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script define:vars={{ googleClientId, apiUrl }}>
+  const TOKEN_KEY = 'webpninja_session';
+
+  const loadingEl = document.getElementById('dash-loading');
+  const signedOutEl = document.getElementById('dash-signed-out');
+  const signedInEl = document.getElementById('dash-signed-in');
+
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+  function setToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+  function clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+  async function api(path, options = {}) {
+    const token = getToken();
+    const res = await fetch(`${apiUrl}${path}`, {
+      ...options,
+      headers: {
+        ...(options.headers ?? {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    return res;
+  }
+
+  let googleScriptPromise;
+  function loadGoogleScript() {
+    if (!googleScriptPromise) {
+      googleScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Google Sign-In script'));
+        document.head.appendChild(script);
+      });
+    }
+    return googleScriptPromise;
+  }
+
+  async function showSignedOut() {
+    loadingEl.classList.add('hidden');
+    signedInEl.classList.add('hidden');
+    signedInEl.classList.remove('flex');
+    signedOutEl.classList.remove('hidden');
+
+    if (!googleClientId) {
+      signedOutEl.querySelector('p').textContent =
+        'Google sign-in is not configured yet. Set PUBLIC_GOOGLE_CLIENT_ID to enable it.';
+      return;
+    }
+
+    try {
+      await loadGoogleScript();
+    } catch (err) {
+      console.error('[dashboard]', err);
+      signedOutEl.querySelector('p').textContent =
+        'Could not load Google Sign-In. Check your connection and reload.';
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleGoogleCredential,
+    });
+    google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
+      theme: 'outline',
+      size: 'large',
+    });
+  }
+
+  async function handleGoogleCredential(response) {
+    try {
+      const res = await fetch(`${apiUrl}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: response.credential }),
+      });
+      if (!res.ok) throw new Error('Sign-in failed');
+      const { token } = await res.json();
+      setToken(token);
+      await showSignedIn();
+    } catch (err) {
+      console.error('[dashboard] sign-in failed:', err);
+      showSignedOut();
+    }
+  }
+
+  function fmtInr(paise) {
+    return paise === 0 ? 'Free' : `₹${paise.toLocaleString('en-IN')}/mo`;
+  }
+
+  async function showSignedIn() {
+    const res = await api('/api/me');
+    if (!res.ok) {
+      clearToken();
+      showSignedOut();
+      return;
+    }
+    const me = await res.json();
+
+    loadingEl.classList.add('hidden');
+    signedOutEl.classList.add('hidden');
+    signedInEl.classList.remove('hidden');
+    signedInEl.classList.add('flex');
+
+    document.getElementById('dash-avatar').src = me.user.avatar_url ?? '';
+    document.getElementById('dash-name').textContent = me.user.name ?? me.user.email;
+    document.getElementById('dash-email').textContent = me.user.email;
+
+    document.getElementById('dash-plan-name').textContent = me.plan?.plan_name ?? 'Free';
+    document.getElementById('dash-plan-price').textContent = me.plan ? fmtInr(me.plan.price_inr) : '';
+
+    const used = me.usage.used;
+    const quota = me.usage.quota || 1;
+    const pct = Math.min(100, Math.round((used / quota) * 100));
+    document.getElementById('dash-usage-bar').style.width = `${pct}%`;
+    document.getElementById('dash-usage-label').textContent =
+      `${used.toLocaleString()} / ${me.usage.quota.toLocaleString()} compressions this period`;
+
+    const keyEmptyEl = document.getElementById('dash-key-empty');
+    const keyExistingEl = document.getElementById('dash-key-existing');
+    if (me.apiKey) {
+      keyExistingEl.classList.remove('hidden');
+      keyEmptyEl.classList.add('hidden');
+      document.getElementById('dash-key-prefix').textContent = `${me.apiKey.key_prefix}…`;
+      document.getElementById('dash-key-generate').textContent = 'Regenerate API Key';
+    } else {
+      keyEmptyEl.classList.remove('hidden');
+      keyExistingEl.classList.add('hidden');
+      document.getElementById('dash-key-generate').textContent = 'Generate API Key';
+    }
+
+    await renderPlans(me.plan?.plan_id ?? 'free');
+  }
+
+  async function renderPlans(currentPlanId) {
+    const res = await api('/api/plans');
+    if (!res.ok) return;
+    const { plans } = await res.json();
+
+    const container = document.getElementById('dash-plans');
+    container.innerHTML = '';
+
+    for (const plan of plans) {
+      const isCurrent = plan.id === currentPlanId;
+      const card = document.createElement('div');
+      card.className = `p-4 rounded-[12px] border flex flex-col gap-2 ${
+        isCurrent ? 'border-[#171717] bg-[#fafafa]' : 'border-[#ebebeb]'
+      }`;
+      card.innerHTML = `
+        <p class="text-[15px] font-semibold text-[#171717]">${plan.name}</p>
+        <p class="text-[13px] text-[#888888]">${fmtInr(plan.price_inr)}</p>
+        <p class="text-[12px] text-[#4d4d4d]">${plan.monthly_quota.toLocaleString()} / month</p>
+      `;
+
+      const btn = document.createElement('button');
+      btn.className = isCurrent
+        ? 'mt-2 h-8 text-[12px] font-semibold text-[#888888] bg-[#f0f0f0] rounded-full cursor-default'
+        : 'mt-2 h-8 text-[12px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors';
+      btn.textContent = isCurrent ? 'Current plan' : plan.price_inr === 0 ? 'Downgrade' : 'Subscribe';
+      btn.disabled = isCurrent;
+      if (!isCurrent && plan.price_inr > 0) {
+        btn.addEventListener('click', () => startCheckout(plan.id));
+      }
+      card.appendChild(btn);
+      container.appendChild(card);
+    }
+  }
+
+  async function startCheckout(planId) {
+    const statusEl = document.getElementById('dash-billing-status');
+    statusEl.classList.remove('hidden');
+    statusEl.textContent = 'Starting checkout…';
+
+    try {
+      const res = await api('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Checkout failed');
+      const { subscriptionId, razorpayKeyId } = await res.json();
+
+      const rzp = new Razorpay({
+        key: razorpayKeyId,
+        subscription_id: subscriptionId,
+        name: 'WebP Ninja',
+        description: 'Developer API subscription',
+        handler: () => {
+          statusEl.textContent = "Payment received — activating your plan…";
+          setTimeout(() => showSignedIn(), 3000);
+        },
+        modal: {
+          ondismiss: () => { statusEl.textContent = ''; statusEl.classList.add('hidden'); },
+        },
+      });
+      rzp.open();
+      statusEl.textContent = '';
+      statusEl.classList.add('hidden');
+    } catch (err) {
+      statusEl.textContent = err.message ?? 'Something went wrong starting checkout.';
+    }
+  }
+
+  document.getElementById('dash-key-generate').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      const res = await api('/api/keys/generate', { method: 'POST' });
+      if (!res.ok) throw new Error('Could not generate key');
+      const { apiKey } = await res.json();
+      document.getElementById('dash-key-raw').textContent = apiKey;
+      document.getElementById('dash-key-raw-box').classList.remove('hidden');
+      await showSignedIn();
+    } catch (err) {
+      console.error('[dashboard] key generation failed:', err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('dash-key-copy').addEventListener('click', () => {
+    const raw = document.getElementById('dash-key-raw').textContent;
+    navigator.clipboard.writeText(raw ?? '');
+  });
+
+  document.getElementById('dash-signout').addEventListener('click', () => {
+    clearToken();
+    showSignedOut();
+  });
+
+  (async () => {
+    if (getToken()) {
+      await showSignedIn();
+    } else {
+      showSignedOut();
+    }
+  })();
+</script>

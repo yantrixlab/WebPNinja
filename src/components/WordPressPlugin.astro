@@ -1,0 +1,125 @@
+---
+const features = [
+  {
+    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    label: "On-server compression",
+    desc: "GD & Imagick — no external API",
+  },
+  {
+    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+    label: "Auto on upload",
+    desc: "Compresses original + all thumbnails",
+  },
+  {
+    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+    label: "Quality slider",
+    desc: "Adjust compression from your WP admin",
+  },
+  {
+    icon: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+    label: "Savings column",
+    desc: "See % saved per image in Media Library",
+  },
+];
+---
+
+<section id="wordpress-plugin" class="bg-[#fafafa] py-24 px-6 border-t border-[#e8e8e8]">
+  <div class="max-w-[1400px] mx-auto">
+
+    <!-- Section header -->
+    <div class="mb-14 flex flex-col items-center text-center">
+      <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
+        # WordPress Plugin
+      </p>
+      <h2 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] max-w-[560px]">
+        Bring WebP Ninja to your WordPress site.
+      </h2>
+      <p class="mt-4 text-[16px] leading-[24px] text-[#4d4d4d] max-w-[480px]">
+        Auto-compress every image the moment it's uploaded — no API key, no external calls, all on your own server.
+      </p>
+    </div>
+
+    <!-- Main card -->
+    <div class="max-w-[860px] mx-auto bg-white rounded-[16px] shadow-card-lg overflow-hidden border border-[#e8e8e8]">
+
+      <!-- Top banner -->
+      <div class="bg-[#171717] px-8 py-6 flex items-center justify-between gap-6 flex-wrap">
+        <div class="flex items-center gap-4">
+          <!-- WP logo mark -->
+          <div class="w-10 h-10 rounded-[10px] bg-white/10 flex items-center justify-center shrink-0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM3.6 12c0-1.2.26-2.34.72-3.37L8.1 19.5A8.42 8.42 0 0 1 3.6 12zm8.4 8.4c-.82 0-1.6-.12-2.35-.33l2.5-7.26 2.55 7c.02.05.04.1.07.13A8.4 8.4 0 0 1 12 20.4zm1.16-12.55c.5-.03.96-.08.96-.08.45-.06.4-.72-.06-.69 0 0-1.35.11-2.22.11-.82 0-2.2-.11-2.2-.11-.46-.03-.51.65-.05.68 0 0 .43.05.89.08l1.32 3.6-1.85 5.55-3.08-9.16c.51-.02.96-.07.96-.07.45-.06.4-.72-.06-.69 0 0-1.35.11-2.22.11-.15 0-.33 0-.51-.01A8.4 8.4 0 0 1 12 3.6c2.2 0 4.2.84 5.7 2.22-.04 0-.07-.01-.11-.01-.82 0-1.4.71-1.4 1.48 0 .69.4 1.27.82 1.96.32.56.69 1.28.69 2.32 0 .72-.28 1.55-.64 2.71l-.84 2.8-3.06-9.13zM17.3 18.9l2.53-7.3c.47-1.18.63-2.12.63-2.96 0-.3-.02-.58-.06-.84A8.41 8.41 0 0 1 20.4 12a8.38 8.38 0 0 1-3.1 6.9z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-[15px] leading-tight">WebP Ninja Compressor</p>
+            <p class="text-[#888888] font-mono text-[11px] mt-0.5">WordPress Plugin · v1.0.0 · Free</p>
+          </div>
+        </div>
+
+        <a
+          href="/wordpress-plugin/webpninja-compressor.zip"
+          download="webpninja-compressor.zip"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-[#171717] text-[14px] font-semibold rounded-full hover:bg-[#f0f0f0] transition-colors shrink-0"
+        >
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M12 15V3m0 12-4-4m4 4 4-4M2 17v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2"/>
+          </svg>
+          Download .zip
+        </a>
+      </div>
+
+      <!-- Features row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#e8e8e8]">
+        {features.map((f) => (
+          <div class="p-5 flex flex-col gap-2">
+            <div class="w-7 h-7 rounded-[6px] bg-[#0070f3]/10 flex items-center justify-center text-[#0070f3]">
+              <Fragment set:html={f.icon} />
+            </div>
+            <p class="text-[13px] font-semibold text-[#171717] leading-snug">{f.label}</p>
+            <p class="text-[12px] text-[#888888] leading-snug">{f.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Install steps -->
+      <div class="border-t border-[#e8e8e8] px-8 py-6">
+        <p class="font-mono text-[11px] text-[#888888] uppercase tracking-wider mb-4">Installation</p>
+        <ol class="flex flex-col sm:flex-row gap-4 sm:gap-0">
+          {[
+            { n: "1", text: "Download the .zip above" },
+            { n: "2", text: "Go to Plugins → Add New → Upload Plugin" },
+            { n: "3", text: "Activate & visit Settings → WebP Ninja" },
+          ].map((step, i) => (
+            <li class="flex items-start gap-3 sm:flex-1 relative">
+              <span class="w-6 h-6 rounded-full bg-[#171717] text-white font-mono text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                {step.n}
+              </span>
+              <span class="text-[13px] text-[#4d4d4d] leading-snug">{step.text}</span>
+              {i < 2 && (
+                <span class="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 text-[#cccccc]">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <!-- Footer note -->
+      <div class="border-t border-[#e8e8e8] bg-[#fafafa] px-8 py-4 flex items-center gap-2">
+        <svg width="14" height="14" fill="none" stroke="#50e3c2" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <p class="text-[12px] text-[#888888]">
+          All compression runs on your own server — images never leave your WordPress install.
+          Need AVIF or GIF? Use the <a href="#compressor" class="text-[#0070f3] hover:underline">browser tool above</a> — free, no limits.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>

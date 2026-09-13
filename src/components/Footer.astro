@@ -1,0 +1,95 @@
+---
+const year = new Date().getFullYear();
+
+const links = [
+  {
+    label: "Product",
+    items: [
+      { text: "Features", href: "#features" },
+      { text: "How it works", href: "#how-it-works" },
+      { text: "FAQ", href: "#faq" },
+    ],
+  },
+  {
+    label: "Formats",
+    items: [
+      { text: "Compress PNG", href: "#compressor" },
+      { text: "Compress JPEG", href: "#compressor" },
+      { text: "Convert to WebP", href: "#compressor" },
+      { text: "Convert to AVIF", href: "#compressor" },
+    ],
+  },
+  {
+    label: "Legal",
+    items: [
+      { text: "Privacy Policy", href: "/privacy" },
+      { text: "Terms of Service", href: "/terms" },
+      { text: "Contact Us", href: "/contact" },
+    ],
+  },
+];
+---
+
+<footer class="bg-[#ffffff] border-t border-[#ebebeb]">
+  <div class="max-w-[1400px] mx-auto px-6 py-16">
+
+    <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4 mb-16">
+
+      <!-- Brand column -->
+      <div class="flex flex-col gap-4">
+        <a href="/" class="flex items-center gap-2">
+          <span class="w-7 h-7 bg-[#171717] rounded-[6px] flex items-center justify-center">
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <rect x="2" y="2" width="5" height="5" rx="1" fill="white"/>
+              <rect x="9" y="9" width="5" height="5" rx="1" fill="white"/>
+              <rect x="9" y="2" width="5" height="5" rx="1" fill="white" opacity=".4"/>
+              <rect x="2" y="9" width="5" height="5" rx="1" fill="white" opacity=".4"/>
+            </svg>
+          </span>
+          <span class="text-[14px] font-semibold tracking-[-0.28px] text-[#171717]">WebP Ninja</span>
+        </a>
+        <p class="text-[14px] leading-[22px] text-[#4d4d4d] max-w-[220px]">
+          The world's fastest, most private image compressor. Built for the web.
+        </p>
+        <!-- Privacy badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#fafafa] border border-[#ebebeb] w-fit">
+          <svg width="12" height="12" fill="none" stroke="#0070f3" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span class="font-mono text-[11px] text-[#4d4d4d]">Zero server upload</span>
+        </div>
+      </div>
+
+      <!-- Nav columns -->
+      {links.map((col) => (
+        <div class="flex flex-col gap-4">
+          <p class="font-mono text-[11px] uppercase tracking-wider text-[#888888]">{col.label}</p>
+          <ul class="flex flex-col gap-2.5">
+            {col.items.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class="text-[14px] text-[#4d4d4d] hover:text-[#171717] transition-colors"
+                >
+                  {item.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="pt-8 border-t border-[#ebebeb] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="font-mono text-[12px] text-[#888888]">
+        © {year} webpninja.com — All rights reserved.
+      </p>
+      <p class="font-mono text-[12px] text-[#888888]">
+        Your images are processed locally. We see nothing.
+      </p>
+    </div>
+
+  </div>
+</footer>

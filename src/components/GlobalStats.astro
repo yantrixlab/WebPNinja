@@ -1,0 +1,100 @@
+---
+const apiUrl     = import.meta.env.PUBLIC_API_URL ?? '';
+const configured = apiUrl && apiUrl !== 'your_api_url';
+---
+
+<section id="global-stats" class="bg-[#0d0d0d] py-16 px-6 border-t border-[#1f1f1f]">
+  <div class="max-w-[1400px] mx-auto flex flex-col items-center text-center gap-3">
+    <p class="font-mono text-[11px] text-[#444] uppercase tracking-widest">Live counter</p>
+
+    <div class="relative flex items-baseline gap-3">
+      <!-- Pulse dot — flashes on each new compression -->
+      <span
+        id="stats-pulse"
+        class="absolute -left-5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#50e3c2] opacity-0 transition-opacity duration-200"
+      ></span>
+
+      <span
+        id="stats-counter"
+        class="font-semibold text-[48px] sm:text-[64px] leading-none tracking-[-2px] text-white tabular-nums"
+        data-value="0"
+      >—</span>
+    </div>
+
+    <p class="text-[14px] text-[#666] leading-none">Total compressed &amp; converted images</p>
+  </div>
+</section>
+
+<script define:vars={{ apiUrl, configured }}>
+  if (configured) {
+    const counterEl = document.getElementById('stats-counter');
+    const pulseEl   = document.getElementById('stats-pulse');
+
+    /* ── Formatter ── */
+    const fmt = new Intl.NumberFormat('en-US');
+
+    /* ── Smooth animated count-up ── */
+    let current = 0;
+    function animateTo(to, duration = 800) {
+      const from  = current;
+      const start = performance.now();
+      function tick(now) {
+        const p    = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const val  = Math.round(from + (to - from) * ease);
+        counterEl.textContent  = fmt.format(val);
+        counterEl.dataset.value = String(val);
+        if (p < 1) requestAnimationFrame(tick);
+        else current = to;
+      }
+      requestAnimationFrame(tick);
+    }
+
+    /* ── Pulse flash ── */
+    function flash() {
+      pulseEl.style.opacity = '1';
+      setTimeout(() => { pulseEl.style.opacity = '0'; }, 600);
+    }
+
+    /* ── Initial fetch ── */
+    fetch(`${apiUrl}/api/stats`)
+      .then(r => r.json())
+      .then(d => {
+        const val = Number(d.total_images);
+        if (Number.isFinite(val)) {
+          animateTo(val, 1200);
+        } else {
+          console.warn('[GlobalStats] unexpected value:', d);
+          counterEl.textContent = '—';
+        }
+      })
+      .catch((e) => {
+        console.warn('[GlobalStats] fetch failed:', e.message);
+        counterEl.textContent = '—';
+      });
+
+    /* ── SSE — real-time updates from all visitors ── */
+    const es = new EventSource(`${apiUrl}/api/stats/stream`);
+    es.onmessage = (e) => {
+      const val = Number(e.data);
+      if (Number.isFinite(val) && val > current) { flash(); animateTo(val); }
+    };
+    es.onerror = () => { /* silently ignore — SSE auto-reconnects */ };
+
+    /* ── Local compression event → POST increment ── */
+    window.addEventListener('webpninja:compressed', (e) => {
+      const count = e.detail?.count ?? 1;
+      fetch(`${apiUrl}/api/stats/increment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count }),
+      }).catch(() => {
+        // Optimistic update only if we have a valid current value
+        if (Number.isFinite(current) && current > 0) {
+          flash();
+          animateTo(current + count);
+        }
+      });
+    });
+  }
+</script>

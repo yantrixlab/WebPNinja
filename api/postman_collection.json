@@ -1,0 +1,127 @@
+{
+  "info": {
+    "name": "WebP Ninja API (local)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3001" },
+    { "key": "session_token", "value": "" },
+    { "key": "api_key", "value": "" },
+    { "key": "plan_id", "value": "starter" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "GET /api/plans",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/plans"
+          }
+        },
+        {
+          "name": "GET /api/stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/stats"
+          }
+        },
+        {
+          "name": "POST /api/stats/increment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"count\": 1\n}"
+            },
+            "url": "{{base_url}}/api/stats/increment"
+          }
+        },
+        {
+          "name": "POST /api/auth/google (needs a real Google ID token)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"PASTE_A_REAL_GOOGLE_ID_TOKEN_HERE\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/google",
+            "description": "Can't be generated from Postman directly — Google only issues these to a real browser sign-in. Easiest path: sign in on http://localhost:4321/dashboard, then copy the JWT this endpoint returns (visible in the dashboard's Network tab response, or from localStorage key 'webpninja_session') into the session_token collection variable instead of calling this manually."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard (needs session_token)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{session_token}}" }]
+      },
+      "item": [
+        {
+          "name": "GET /api/me",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/me"
+          }
+        },
+        {
+          "name": "POST /api/keys/generate",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/keys/generate",
+            "description": "Response includes 'apiKey' — copy that raw value into the api_key collection variable. It is only ever shown in this one response."
+          }
+        },
+        {
+          "name": "DELETE /api/keys",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/keys"
+          }
+        },
+        {
+          "name": "POST /api/billing/checkout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{plan_id}}\"\n}"
+            },
+            "url": "{{base_url}}/api/billing/checkout",
+            "description": "Will fail until RAZORPAY_KEY_ID/SECRET are set in api/.env and the plan has a razorpay_plan_id in the plans table."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Developer API (needs api_key)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{api_key}}" }]
+      },
+      "item": [
+        {
+          "name": "POST /api/v1/compress",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "format", "type": "text", "value": "webp" },
+                { "key": "quality", "type": "text", "value": "75" }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/compress",
+            "description": "In Postman: click the 'file' row's Value cell and pick a local image. Response body is the compressed image binary — use Postman's 'Save Response > Save to a file' to inspect it."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout
+  title="Contact Us — WebP Ninja"
+  description="Get in touch with the WebP Ninja team — questions, feedback, and bug reports welcome."
+>
+  <Nav />
+  <main class="max-w-[760px] mx-auto px-6 py-24">
+    <h1 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] mb-4">
+      Contact Us
+    </h1>
+    <p class="text-[16px] leading-[26px] text-[#4d4d4d] mb-12 max-w-[560px]">
+      Questions, feedback, or found a bug? We'd love to hear from you.
+      Since everything runs locally in your browser, we can't see your images —
+      but we can help with anything else.
+    </p>
+
+    <div class="grid gap-6 sm:grid-cols-2">
+      <!-- Email card -->
+      <a
+        href="mailto:hello@webpninja.com"
+        class="group flex flex-col gap-3 p-6 rounded-[16px] bg-white border border-[#ebebeb] hover:border-[#171717] transition-colors"
+      >
+        <div class="w-10 h-10 rounded-[10px] bg-[#f0f7ff] border border-[#d0e8ff] flex items-center justify-center">
+          <svg width="18" height="18" fill="none" stroke="#0070f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-[15px] font-semibold text-[#171717] mb-1">Email</p>
+          <p class="text-[14px] text-[#0070f3] group-hover:underline">hello@webpninja.com</p>
+        </div>
+      </a>
+
+      <!-- Bug report card -->
+      <a
+        href="mailto:hello@webpninja.com?subject=Bug%20Report"
+        class="group flex flex-col gap-3 p-6 rounded-[16px] bg-white border border-[#ebebeb] hover:border-[#171717] transition-colors"
+      >
+        <div class="w-10 h-10 rounded-[10px] bg-[#fff0f5] border border-[#ffd6e7] flex items-center justify-center">
+          <svg width="18" height="18" fill="none" stroke="#ff0080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8"/>
+            <path d="M12 8v4l3 3"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-[15px] font-semibold text-[#171717] mb-1">Report a Bug</p>
+          <p class="text-[14px] text-[#0070f3] group-hover:underline">Send a bug report</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Contact form -->
+    <div class="mt-12 p-6 sm:p-8 rounded-[16px] bg-white border border-[#ebebeb]">
+      <h2 class="text-[18px] font-semibold text-[#171717] mb-5">Or send us a message</h2>
+
+      <form id="contact-form" class="flex flex-col gap-4">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-1.5">
+            <label for="name" class="text-[12px] font-medium text-[#666]">Name</label>
+            <input
+              type="text" id="name" name="name" required
+              class="h-10 px-3 text-[14px] rounded-[8px] border border-[#ebebeb] focus:border-[#171717] focus:outline-none transition-colors"
+            />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label for="email" class="text-[12px] font-medium text-[#666]">Email</label>
+            <input
+              type="email" id="email" name="email" required
+              class="h-10 px-3 text-[14px] rounded-[8px] border border-[#ebebeb] focus:border-[#171717] focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="subject" class="text-[12px] font-medium text-[#666]">Subject</label>
+          <input
+            type="text" id="subject" name="subject"
+            class="h-10 px-3 text-[14px] rounded-[8px] border border-[#ebebeb] focus:border-[#171717] focus:outline-none transition-colors"
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="message" class="text-[12px] font-medium text-[#666]">Message</label>
+          <textarea
+            id="message" name="message" required rows="5"
+            class="px-3 py-2 text-[14px] rounded-[8px] border border-[#ebebeb] focus:border-[#171717] focus:outline-none transition-colors resize-none"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          id="contact-submit"
+          class="self-start inline-flex items-center gap-2 h-10 px-5 text-[14px] font-semibold text-white rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background:#171717"
+        >
+          Send message
+        </button>
+
+        <p id="contact-status" class="text-[13px] hidden"></p>
+      </form>
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-[#ebebeb]">
+      <p class="text-[14px] leading-[22px] text-[#888888]">
+        Looking for something else? Check our <a href="/#faq" class="text-[#0070f3] hover:underline">FAQ</a>
+        for answers to common questions, or read our
+        <a href="/privacy" class="text-[#0070f3] hover:underline">Privacy Policy</a> and
+        <a href="/terms" class="text-[#0070f3] hover:underline">Terms of Service</a>.
+      </p>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  // Replace with the deployment URL from Apps Script (Deploy > New deployment > Web app).
+  const CONTACT_FORM_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyd7xt2sGlOOgZ67ud0DJ5oecK6VFcSHxDncAaXn_98GC-9Kmds_jB92CKf9XDPoaI/exec';
+
+  const form = document.getElementById('contact-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('contact-submit') as HTMLButtonElement;
+  const status = document.getElementById('contact-status') as HTMLParagraphElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (CONTACT_FORM_ENDPOINT.includes('PASTE_YOUR')) {
+      status.textContent = 'Contact form is not configured yet — please email us directly above.';
+      status.className = 'text-[13px] text-[#ee0000]';
+      status.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    status.classList.add('hidden');
+
+    const payload = {
+      name: (document.getElementById('name') as HTMLInputElement).value,
+      email: (document.getElementById('email') as HTMLInputElement).value,
+      subject: (document.getElementById('subject') as HTMLInputElement).value,
+      message: (document.getElementById('message') as HTMLTextAreaElement).value,
+    };
+
+    try {
+      // text/plain avoids a CORS preflight request, which Apps Script web apps don't handle.
+      const res = await fetch(CONTACT_FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+
+      if (json.ok) {
+        form.reset();
+        status.textContent = "Thanks — we'll get back to you soon.";
+        status.className = 'text-[13px] text-[#0070f3]';
+      } else {
+        throw new Error(json.error || 'Submission failed');
+      }
+    } catch (err) {
+      status.textContent = 'Something went wrong. Please try emailing us directly.';
+      status.className = 'text-[13px] text-[#ee0000]';
+    } finally {
+      status.classList.remove('hidden');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send message';
+    }
+  });
+</script>
