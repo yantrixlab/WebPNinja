@@ -73,7 +73,7 @@ const features = [
       <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#e8e8e8]">
         {features.map((f) => (
           <div class="p-5 flex flex-col gap-2">
-            <div class="w-7 h-7 rounded-[6px] bg-[#0070f3]/10 flex items-center justify-center text-[#0070f3]">
+            <div class="w-7 h-7 rounded-[6px] bg-[#fef3d7] flex items-center justify-center text-[#d69400]">
               <Fragment set:html={f.icon} />
             </div>
             <p class="text-[13px] font-semibold text-[#171717] leading-snug">{f.label}</p>
@@ -109,13 +109,13 @@ const features = [
       </div>
 
       <!-- Footer note -->
-      <div class="border-t border-[#e8e8e8] bg-[#fafafa] px-8 py-4 flex items-center gap-2">
-        <svg width="14" height="14" fill="none" stroke="#50e3c2" stroke-width="2" viewBox="0 0 24 24">
+      <div class="border-t border-[#e8e8e8] bg-[#fffaf0] px-8 py-4 flex items-center gap-2">
+        <svg width="14" height="14" fill="none" stroke="#d69400" stroke-width="2" viewBox="0 0 24 24">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
         <p class="text-[12px] text-[#888888]">
           All compression runs on your own server — images never leave your WordPress install.
-          Need AVIF or GIF? Use the <a href="#compressor" class="text-[#0070f3] hover:underline">browser tool above</a> — free, no limits.
+          Need AVIF or GIF? Use the <a href="#compressor" class="text-[#b45309] hover:underline">browser tool above</a> — free, no limits.
         </p>
       </div>
 

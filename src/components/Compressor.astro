@@ -10,9 +10,23 @@
   <div class="absolute inset-0 mesh-gradient pointer-events-none" aria-hidden="true"></div>
 
   <!-- Decorative soft blobs -->
-  <div class="absolute top-[10%] left-[5%] w-80 h-80 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,112,243,0.07) 0%,transparent 70%);filter:blur(40px)"></div>
-  <div class="absolute bottom-[15%] right-[5%] w-72 h-72 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(121,40,202,0.07) 0%,transparent 70%);filter:blur(40px)"></div>
-  <div class="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(80,227,194,0.04) 0%,transparent 65%);filter:blur(60px)"></div>
+  <div class="absolute top-[10%] left-[5%] w-80 h-80 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(245,180,0,0.10) 0%,transparent 70%);filter:blur(40px)"></div>
+  <div class="absolute bottom-[15%] right-[5%] w-72 h-72 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(255,140,0,0.08) 0%,transparent 70%);filter:blur(40px)"></div>
+
+  <!-- Sunburst corner accent -->
+  <div
+    class="absolute -top-24 -right-24 w-[520px] h-[520px] pointer-events-none"
+    style="background:conic-gradient(from 200deg at 50% 50%, #171717 0deg, #171717 18deg, #f5b400 18deg, #f5b400 30deg, transparent 30deg, transparent 55deg, #f5b400 55deg, #f5b400 62deg, transparent 62deg, transparent 90deg, #f5b400 90deg, #f5b400 100deg, transparent 100deg 360deg); border-radius:9999px; opacity:0.5; mask-image: radial-gradient(circle, black 55%, transparent 78%); -webkit-mask-image: radial-gradient(circle, black 55%, transparent 78%);"
+    aria-hidden="true"
+  ></div>
+
+  <!-- Ninja watermark -->
+  <img
+    src="/ninja-mascot.png"
+    alt=""
+    aria-hidden="true"
+    class="hidden md:block absolute top-1/2 right-[2%] -translate-y-1/2 w-[420px] opacity-[0.05] pointer-events-none select-none"
+  />
 
   <!-- Hero content (shrinks when files are present) -->
   <div
@@ -20,12 +34,9 @@
     class="relative z-10 w-full max-w-[700px] mx-auto px-6 flex flex-col items-center text-center transition-all duration-500"
   >
     <!-- Eyebrow pill -->
-    <div class="mb-8 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-[#e8e8e8]" style="box-shadow:0 1px 8px rgba(0,0,0,0.06)">
-      <span class="relative flex h-2 w-2 shrink-0">
-        <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full opacity-60" style="background:#50e3c2"></span>
-        <span class="relative inline-flex rounded-full h-2 w-2" style="background:#50e3c2"></span>
-      </span>
-      <span class="text-[12px] font-medium text-[#555] tracking-wide">100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever</span>
+    <div class="mb-8 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#fef3d7]/90 backdrop-blur-sm border border-[#f5e0a3]" style="box-shadow:0 1px 8px rgba(0,0,0,0.06)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#d69400"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+      <span class="text-[12px] font-medium text-[#7a4a00] tracking-wide">100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever</span>
     </div>
 
     <!-- Headline -->
@@ -61,9 +72,9 @@
         <!-- Upload icon -->
         <div id="dz-icon"
           class="w-[72px] h-[72px] rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-0.5"
-          style="background:linear-gradient(145deg,#eef4ff,#e0ecff);border:1.5px solid #c8dcff;box-shadow:0 4px 16px rgba(0,112,243,0.12)"
+          style="background:linear-gradient(145deg,#232323,#171717);border:1.5px solid #333;box-shadow:0 4px 20px rgba(245,180,0,0.28)"
         >
-          <svg width="30" height="30" fill="none" stroke="#0070f3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <svg width="30" height="30" fill="none" stroke="#f5b400" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <polyline points="16 16 12 12 8 16"/>
             <line x1="12" y1="12" x2="12" y2="21"/>
             <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
@@ -73,7 +84,7 @@
         <!-- Drop zone text -->
         <div id="dz-text" class="flex flex-col items-center gap-2">
           <p class="text-[16px] font-semibold text-[#111]">
-            Drop images here &nbsp;<span class="font-normal text-[#aaa]">or</span>&nbsp; <span class="text-[#0070f3]">browse files</span>
+            Drop images here &nbsp;<span class="font-normal text-[#aaa]">or</span>&nbsp; <span class="text-[#b45309]">browse files</span>
           </p>
           <p class="text-[13px] text-[#999]">
             Paste&nbsp;<kbd class="px-1.5 py-0.5 text-[11px] font-mono bg-[#f3f3f3] border border-[#e8e8e8] rounded-[5px] text-[#555]">Ctrl+V</kbd>&nbsp;to compress screenshots instantly
@@ -83,7 +94,7 @@
         <!-- Format badges -->
         <div class="flex flex-wrap items-center justify-center gap-1.5">
           {["PNG", "JPEG", "WebP", "GIF", "BMP", "AVIF"].map((fmt) => (
-            <span class="px-3 py-[5px] text-[11px] font-semibold tracking-wide text-[#777] bg-[#f5f5f5] border border-[#ebebeb] rounded-full">
+            <span class="px-3 py-[5px] text-[11px] font-semibold tracking-wide text-[#7a4a00] bg-[#fef3d7] border border-[#f5e0a3] rounded-full">
               {fmt}
             </span>
           ))}
@@ -93,16 +104,16 @@
         <div
           id="drag-overlay"
           class="absolute inset-0 rounded-[18px] hidden flex-col items-center justify-center gap-4"
-          style="background:linear-gradient(135deg,rgba(0,112,243,0.05),rgba(121,40,202,0.05));border:2px solid #0070f3;box-shadow:0 0 0 4px rgba(0,112,243,0.1)"
+          style="background:linear-gradient(135deg,rgba(245,180,0,0.08),rgba(255,140,0,0.08));border:2px solid #f5b400;box-shadow:0 0 0 4px rgba(245,180,0,0.14)"
           aria-hidden="true"
         >
-          <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(0,112,243,0.1)">
-            <svg width="28" height="28" fill="none" stroke="#0070f3" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(245,180,0,0.16)">
+            <svg width="28" height="28" fill="none" stroke="#d69400" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
               <path d="M12 15V3m0 0-4 4m4-4 4 4"/>
               <path d="M20 21H4"/>
             </svg>
           </div>
-          <p class="text-[17px] font-bold text-[#0070f3]">Release to compress</p>
+          <p class="text-[17px] font-bold text-[#b45309]">Release to compress</p>
         </div>
       </div>
     </div>
@@ -113,17 +124,17 @@
     <!-- Trust indicators -->
     <div id="trust-row" class="mt-6 flex items-center gap-5 flex-wrap justify-center">
       <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
-        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="13" height="13" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         No server uploads
       </span>
       <span class="w-px h-3 bg-[#e0e0e0]"></span>
       <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
-        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="13" height="13" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Unlimited files &amp; sizes
       </span>
       <span class="w-px h-3 bg-[#e0e0e0]"></span>
       <span class="flex items-center gap-1.5 text-[12px] text-[#999]">
-        <svg width="13" height="13" fill="none" stroke="#50e3c2" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="13" height="13" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         MozJPEG · oxipng · libwebp
       </span>
     </div>
@@ -203,11 +214,11 @@
 
       <!-- Stats badge -->
       <div id="stats" class="hidden items-center gap-2">
-        <div class="flex items-center gap-2 h-9 px-3.5 rounded-[10px] bg-[#f0f7ff] border border-[#d0e8ff]">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0070f3" stroke-width="2.2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <span id="file-count" class="text-[11px] font-semibold text-[#0070f3] uppercase tracking-[0.06em]">0 files</span>
-          <div class="w-px h-3.5 bg-[#c0d8f0]"></div>
-          <span id="total-saved" class="text-[13px] font-bold text-[#0070f3] tabular-nums"></span>
+        <div class="flex items-center gap-2 h-9 px-3.5 rounded-[10px] bg-[#fef3d7] border border-[#f5e0a3]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span id="file-count" class="text-[11px] font-semibold text-[#b45309] uppercase tracking-[0.06em]">0 files</span>
+          <div class="w-px h-3.5 bg-[#f0d998]"></div>
+          <span id="total-saved" class="text-[13px] font-bold text-[#b45309] tabular-nums"></span>
         </div>
       </div>
 
@@ -634,14 +645,14 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
     const ext = mimeToExt(item.outputMime).toUpperCase();
     extEl.textContent = ext;
     extEl.className = 'text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md shrink-0 text-white';
-    extEl.style.background = ext === 'WEBP' ? '#7928ca' : ext === 'AVIF' ? '#00897b' : ext === 'JPG' ? '#ff6b00' : '#0070f3';
+    extEl.style.background = ext === 'WEBP' ? '#d69400' : ext === 'AVIF' ? '#00897b' : ext === 'JPG' ? '#ff6b00' : '#171717';
   }
 
   // Badge — positioned top-left of thumbnail
   const badge = document.getElementById(`badge-${id}`);
   if (badge) {
     const bg = savedPct >= 60 ? 'linear-gradient(135deg,#00c853,#00897b)'
-             : savedPct >= 30 ? 'linear-gradient(135deg,#0070f3,#00b4d8)'
+             : savedPct >= 30 ? 'linear-gradient(135deg,#f5b400,#ff8c00)'
              : 'linear-gradient(135deg,#888,#aaa)';
     badge.innerHTML = `<span class="inline-flex items-center px-2.5 py-1 text-[11px] font-mono font-bold text-white rounded-lg shadow-sm" style="background:${bg}; letter-spacing:0.02em">−${savedPct}%</span>`;
     badge.classList.remove('hidden');
@@ -650,7 +661,7 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
   // Meta — clear before/after layout
   const meta = document.getElementById(`meta-${id}`);
   if (meta) {
-    const accentColor = savedPct >= 30 ? '#0070f3' : '#888888';
+    const accentColor = savedPct >= 30 ? '#d69400' : '#888888';
     meta.innerHTML = `
       <div class="flex items-center gap-2">
         <span class="text-[#bbbbbb] line-through">${formatBytes(item.originalSize)}</span>
@@ -665,7 +676,7 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
   const progress = document.getElementById(`progress-${id}`);
   if (progress) {
     const barColor = savedPct >= 60 ? '#00c853'
-                   : savedPct >= 30 ? '#0070f3'
+                   : savedPct >= 30 ? '#d69400'
                    : '#aaaaaa';
     progress.innerHTML = `<div class="h-full rounded-full transition-all duration-700" style="width:${savedPct}%;background:${barColor}"></div>`;
   }

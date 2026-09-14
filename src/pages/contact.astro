@@ -25,15 +25,15 @@ import Footer from '../components/Footer.astro';
         href="mailto:hello@webpninja.com"
         class="group flex flex-col gap-3 p-6 rounded-[16px] bg-white border border-[#ebebeb] hover:border-[#171717] transition-colors"
       >
-        <div class="w-10 h-10 rounded-[10px] bg-[#f0f7ff] border border-[#d0e8ff] flex items-center justify-center">
-          <svg width="18" height="18" fill="none" stroke="#0070f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <div class="w-10 h-10 rounded-[10px] bg-[#fef3d7] border border-[#f5e0a3] flex items-center justify-center">
+          <svg width="18" height="18" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
           </svg>
         </div>
         <div>
           <p class="text-[15px] font-semibold text-[#171717] mb-1">Email</p>
-          <p class="text-[14px] text-[#0070f3] group-hover:underline">hello@webpninja.com</p>
+          <p class="text-[14px] text-[#b45309] group-hover:underline">hello@webpninja.com</p>
         </div>
       </a>
 
@@ -42,15 +42,15 @@ import Footer from '../components/Footer.astro';
         href="mailto:hello@webpninja.com?subject=Bug%20Report"
         class="group flex flex-col gap-3 p-6 rounded-[16px] bg-white border border-[#ebebeb] hover:border-[#171717] transition-colors"
       >
-        <div class="w-10 h-10 rounded-[10px] bg-[#fff0f5] border border-[#ffd6e7] flex items-center justify-center">
-          <svg width="18" height="18" fill="none" stroke="#ff0080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <div class="w-10 h-10 rounded-[10px] bg-[#fdeaea] border border-[#f5c6c6] flex items-center justify-center">
+          <svg width="18" height="18" fill="none" stroke="#ee0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="8"/>
             <path d="M12 8v4l3 3"/>
           </svg>
         </div>
         <div>
           <p class="text-[15px] font-semibold text-[#171717] mb-1">Report a Bug</p>
-          <p class="text-[14px] text-[#0070f3] group-hover:underline">Send a bug report</p>
+          <p class="text-[14px] text-[#b45309] group-hover:underline">Send a bug report</p>
         </div>
       </a>
     </div>
@@ -106,10 +106,10 @@ import Footer from '../components/Footer.astro';
 
     <div class="mt-12 pt-8 border-t border-[#ebebeb]">
       <p class="text-[14px] leading-[22px] text-[#888888]">
-        Looking for something else? Check our <a href="/#faq" class="text-[#0070f3] hover:underline">FAQ</a>
+        Looking for something else? Check our <a href="/#faq" class="text-[#b45309] hover:underline">FAQ</a>
         for answers to common questions, or read our
-        <a href="/privacy" class="text-[#0070f3] hover:underline">Privacy Policy</a> and
-        <a href="/terms" class="text-[#0070f3] hover:underline">Terms of Service</a>.
+        <a href="/privacy" class="text-[#b45309] hover:underline">Privacy Policy</a> and
+        <a href="/terms" class="text-[#b45309] hover:underline">Terms of Service</a>.
       </p>
     </div>
   </main>
@@ -157,7 +157,7 @@ import Footer from '../components/Footer.astro';
       if (json.ok) {
         form.reset();
         status.textContent = "Thanks — we'll get back to you soon.";
-        status.className = 'text-[13px] text-[#0070f3]';
+        status.className = 'text-[13px] text-[#b45309]';
       } else {
         throw new Error(json.error || 'Submission failed');
       }
