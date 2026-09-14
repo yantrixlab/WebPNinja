@@ -13,12 +13,19 @@
   <div class="absolute top-[10%] left-[5%] w-80 h-80 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(245,180,0,0.10) 0%,transparent 70%);filter:blur(40px)"></div>
   <div class="absolute bottom-[15%] right-[5%] w-72 h-72 rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(255,140,0,0.08) 0%,transparent 70%);filter:blur(40px)"></div>
 
-  <!-- Sunburst corner accent -->
-  <div
-    class="absolute -top-24 -right-24 w-[520px] h-[520px] pointer-events-none"
-    style="background:conic-gradient(from 200deg at 50% 50%, #171717 0deg, #171717 18deg, #f5b400 18deg, #f5b400 30deg, transparent 30deg, transparent 55deg, #f5b400 55deg, #f5b400 62deg, transparent 62deg, transparent 90deg, #f5b400 90deg, #f5b400 100deg, transparent 100deg 360deg); border-radius:9999px; opacity:0.5; mask-image: radial-gradient(circle, black 55%, transparent 78%); -webkit-mask-image: radial-gradient(circle, black 55%, transparent 78%);"
+  <!-- Sunburst corner accent — fixed-size SVG glued to the top-right corner;
+       everything is drawn within the viewBox so it can never spill into other
+       corners regardless of the section's actual width/height. -->
+  <svg
+    class="hidden sm:block absolute top-0 right-0 w-[340px] h-[280px] pointer-events-none"
+    viewBox="0 0 340 280"
+    preserveAspectRatio="none"
     aria-hidden="true"
-  ></div>
+  >
+    <polygon points="340,0 340,150 210,0" fill="#171717" opacity="0.92" />
+    <polygon points="340,20 40,190 90,210 340,55" fill="#f5b400" opacity="0.85" />
+    <polygon points="340,70 110,240 145,255 340,100" fill="#f5b400" opacity="0.55" />
+  </svg>
 
   <!-- Ninja watermark -->
   <img
