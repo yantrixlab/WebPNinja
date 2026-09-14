@@ -101,6 +101,38 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       </div>
     </div>
   </main>
+
+  <!-- Payment success modal -->
+  <div
+    id="success-modal"
+    class="hidden success-modal-backdrop fixed inset-0 z-[100] items-center justify-center p-6"
+    style="background:rgba(23,23,23,0.55)"
+  >
+    <div class="success-modal-card relative w-full max-w-[380px] bg-white rounded-[20px] p-8 flex flex-col items-center text-center gap-4" style="box-shadow:0 24px 48px rgba(0,0,0,0.25)">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle class="success-check-circle" cx="36" cy="36" r="34" fill="none" stroke="#f5b400" stroke-width="3" />
+        <path class="success-check-mark" d="M22 37 L32 47 L52 25" fill="none" stroke="#171717" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <div>
+        <h3 class="text-[20px] font-bold text-[#171717] mb-1">Payment successful!</h3>
+        <p class="text-[14px] text-[#888888]">You're now subscribed to</p>
+      </div>
+      <div class="w-full p-4 rounded-[14px] bg-[#fef3d7] border border-[#f5e0a3] flex items-center justify-between">
+        <div class="text-left">
+          <p id="success-plan-name" class="text-[16px] font-bold text-[#171717]"></p>
+          <p id="success-plan-quota" class="text-[12px] text-[#7a4a00]"></p>
+        </div>
+        <p id="success-plan-price" class="text-[18px] font-bold text-[#b45309]"></p>
+      </div>
+      <button
+        id="success-close"
+        class="mt-2 w-full h-11 rounded-full bg-[#171717] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors"
+      >
+        Awesome, let's go
+      </button>
+    </div>
+  </div>
+
   <Footer />
 </Layout>
 
@@ -272,14 +304,14 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       btn.textContent = isCurrent ? 'Current plan' : plan.price_inr === 0 ? 'Downgrade' : 'Subscribe';
       btn.disabled = isCurrent;
       if (!isCurrent && plan.price_inr > 0) {
-        btn.addEventListener('click', () => startCheckout(plan.id));
+        btn.addEventListener('click', () => startCheckout(plan));
       }
       card.appendChild(btn);
       container.appendChild(card);
     }
   }
 
-  async function startCheckout(planId) {
+  async function startCheckout(plan) {
     const statusEl = document.getElementById('dash-billing-status');
     statusEl.classList.remove('hidden');
     statusEl.textContent = 'Starting checkout…';
@@ -288,7 +320,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       const res = await api('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId: plan.id }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? 'Checkout failed');
       const { subscriptionId, razorpayKeyId } = await res.json();
@@ -298,10 +330,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         subscription_id: subscriptionId,
         name: 'WebP Ninja',
         description: 'Developer API subscription',
-        handler: () => {
-          statusEl.textContent = "Payment received — activating your plan…";
-          setTimeout(() => showSignedIn(), 3000);
-        },
+        handler: () => showPaymentSuccess(plan),
         modal: {
           ondismiss: () => { statusEl.textContent = ''; statusEl.classList.add('hidden'); },
         },
@@ -313,6 +342,26 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       statusEl.textContent = err.message ?? 'Something went wrong starting checkout.';
     }
   }
+
+  function showPaymentSuccess(plan) {
+    document.getElementById('success-plan-name').textContent = plan.name;
+    document.getElementById('success-plan-quota').textContent =
+      `${plan.monthly_quota.toLocaleString()} compressions / month`;
+    document.getElementById('success-plan-price').textContent = fmtInr(plan.price_inr);
+
+    const modal = document.getElementById('success-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function hidePaymentSuccess() {
+    const modal = document.getElementById('success-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    showSignedIn();
+  }
+
+  document.getElementById('success-close').addEventListener('click', hidePaymentSuccess);
 
   document.getElementById('dash-key-generate').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
