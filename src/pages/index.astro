@@ -6,6 +6,7 @@ import Features from '../components/Features.astro';
 import HowItWorks from '../components/HowItWorks.astro';
 import FAQ from '../components/FAQ.astro';
 import GlobalStats from '../components/GlobalStats.astro';
+import Products from '../components/Products.astro';
 import WordPressPlugin from '../components/WordPressPlugin.astro';
 import Footer from '../components/Footer.astro';
 import { faqs } from '../data/faq';
@@ -45,7 +46,7 @@ const organizationSchema = {
   "@type": "Organization",
   "name": "WebP Ninja",
   "url": siteUrl,
-  "logo": new URL("/favicon.svg", Astro.site).toString(),
+  "logo": new URL("/favicon-96x96.png", Astro.site).toString(),
 };
 
 const websiteSchema = {
@@ -67,6 +68,7 @@ const websiteSchema = {
   <main>
     <Compressor />
     <GlobalStats />
+    <Products />
     <Features />
     <HowItWorks />
     <FAQ />
