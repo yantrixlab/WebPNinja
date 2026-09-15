@@ -7,7 +7,7 @@
 INSERT INTO plans (id, name, price_inr, monthly_quota, razorpay_plan_id, rate_limit_per_min, max_upload_mb) VALUES
   ('free',    'Free',    0,   500,    NULL, 30,  10),
   ('starter', 'Starter', 299, 10000,  'plan_Tc4FCvgAGHRcMC', 60,  50),
-  ('pro',     'Pro',     999, -1,     'plan_Tc4G2ZhCM9yaD3', 120, 200)
+  ('pro',     'Pro',     599, -1,     'plan_TcQyrXQjt5XTuc', 120, 200)
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   price_inr = EXCLUDED.price_inr,
