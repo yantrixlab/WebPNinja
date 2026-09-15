@@ -242,6 +242,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     return `≈ $${(priceInr * USD_PER_INR).toFixed(2)}/mo`;
   }
 
+  function formatQuota(quota) {
+    return quota === -1 ? 'Unlimited' : quota.toLocaleString();
+  }
+
   const PLAN_META = {
     free: {
       tag: 'Getting started',
@@ -290,11 +294,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       : '';
 
     const used = me.usage.used;
-    const quota = me.usage.quota || 1;
-    const pct = Math.min(100, Math.round((used / quota) * 100));
+    const isUnlimited = me.usage.quota === -1;
+    const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / (me.usage.quota || 1)) * 100));
     document.getElementById('dash-usage-bar').style.width = `${pct}%`;
-    document.getElementById('dash-usage-label').textContent =
-      `${used.toLocaleString()} / ${me.usage.quota.toLocaleString()} compressions this period`;
+    document.getElementById('dash-usage-label').textContent = isUnlimited
+      ? `${used.toLocaleString()} compressions this period — Unlimited plan`
+      : `${used.toLocaleString()} / ${me.usage.quota.toLocaleString()} compressions this period`;
 
     const keyEmptyEl = document.getElementById('dash-key-empty');
     const keyExistingEl = document.getElementById('dash-key-existing');
@@ -350,7 +355,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         <ul class="flex flex-col gap-1.5 text-[12px] text-[#4d4d4d]">
           <li class="flex items-center gap-1.5">
             <svg width="12" height="12" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            ${plan.monthly_quota.toLocaleString()} compressions / month
+            ${formatQuota(plan.monthly_quota)} compressions / month
+          </li>
+          <li class="flex items-center gap-1.5">
+            <svg width="12" height="12" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-bold" style="background:${meta.accentSoft}; color:${meta.accent}">
+              Up to ${plan.max_upload_mb} MB / image
+            </span>
           </li>
           ${meta.perks.map(perk => `
             <li class="flex items-center gap-1.5">
@@ -410,7 +421,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
   function showPaymentSuccess(plan) {
     document.getElementById('success-plan-name').textContent = plan.name;
     document.getElementById('success-plan-quota').textContent =
-      `${plan.monthly_quota.toLocaleString()} compressions / month`;
+      `${formatQuota(plan.monthly_quota)} compressions / month · up to ${plan.max_upload_mb} MB / image`;
     document.getElementById('success-plan-price').textContent = fmtInr(plan.price_inr);
 
     const modal = document.getElementById('success-modal');

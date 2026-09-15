@@ -22,10 +22,12 @@ CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   price_inr INTEGER NOT NULL,
-  monthly_quota INTEGER NOT NULL,
+  monthly_quota INTEGER NOT NULL, -- -1 means unlimited
   razorpay_plan_id TEXT,
-  rate_limit_per_min INTEGER NOT NULL DEFAULT 60
+  rate_limit_per_min INTEGER NOT NULL DEFAULT 60,
+  max_upload_mb INTEGER NOT NULL DEFAULT 10
 );
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS max_upload_mb INTEGER NOT NULL DEFAULT 10;
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

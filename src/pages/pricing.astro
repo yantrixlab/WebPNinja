@@ -95,6 +95,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     },
   };
 
+  function formatQuota(quota) {
+    return quota === -1 ? 'Unlimited' : quota.toLocaleString();
+  }
+
   async function detectCountry() {
     const cached = sessionStorage.getItem(GEO_CACHE_KEY);
     if (cached) return cached;
@@ -180,7 +184,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         <ul class="flex flex-col gap-2.5 text-[14px] text-[#4d4d4d] flex-1">
           <li class="flex items-center gap-2">
             <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            <strong class="text-[#171717]">${plan.monthly_quota.toLocaleString()}</strong>&nbsp;compressions / month
+            <strong class="text-[#171717]">${formatQuota(plan.monthly_quota)}</strong>&nbsp;compressions / month
+          </li>
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold" style="background:${meta.accentSoft}; color:${meta.accent}">
+              Up to ${plan.max_upload_mb} MB per image
+            </span>
           </li>
           ${meta.perks.map(perk => `
             <li class="flex items-center gap-2">

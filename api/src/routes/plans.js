@@ -6,7 +6,7 @@ export const plansRouter = Router();
 plansRouter.get('/api/plans', async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, name, price_inr, monthly_quota FROM plans ORDER BY price_inr ASC'
+      'SELECT id, name, price_inr, monthly_quota, max_upload_mb FROM plans ORDER BY price_inr ASC'
     );
     res.json({ plans: rows });
   } catch (err) {

@@ -20,7 +20,7 @@ meRouter.get('/api/me', requireAuth, async (req, res) => {
 
     const { rows: subRows } = await pool.query(
       `SELECT s.status, s.current_period_end, p.id AS plan_id, p.name AS plan_name,
-              p.monthly_quota, p.price_inr
+              p.monthly_quota, p.price_inr, p.max_upload_mb
        FROM subscriptions s JOIN plans p ON p.id = s.plan_id
        WHERE s.user_id = $1 AND s.status = 'active'`,
       [req.userId]

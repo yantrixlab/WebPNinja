@@ -24,7 +24,7 @@ export async function requireApiKey(req, res, next) {
 
   try {
     const { rows } = await pool.query(
-      `SELECT ak.id AS api_key_id, ak.user_id, p.id AS plan_id, p.monthly_quota, p.rate_limit_per_min
+      `SELECT ak.id AS api_key_id, ak.user_id, p.id AS plan_id, p.monthly_quota, p.rate_limit_per_min, p.max_upload_mb
        FROM api_keys ak
        JOIN subscriptions s ON s.user_id = ak.user_id AND s.status = 'active'
        JOIN plans p ON p.id = s.plan_id
@@ -37,6 +37,7 @@ export async function requireApiKey(req, res, next) {
       return res.status(401).json({ error: 'Invalid or revoked API key' });
     }
 
+    const isUnlimited = row.monthly_quota === -1;
     const period = currentPeriod();
     const { rows: usageRows } = await pool.query(
       'SELECT count FROM usage_monthly WHERE user_id = $1 AND period = $2',
@@ -44,13 +45,18 @@ export async function requireApiKey(req, res, next) {
     );
     const used = usageRows[0]?.count ?? 0;
 
-    if (used >= row.monthly_quota) {
+    if (!isUnlimited && used >= row.monthly_quota) {
       return res.status(429).json({ error: 'Monthly quota exceeded', quota: row.monthly_quota, used });
     }
 
     req.apiUserId = row.user_id;
     req.apiKeyId = row.api_key_id;
-    req.plan = { id: row.plan_id, monthlyQuota: row.monthly_quota, rateLimitPerMin: row.rate_limit_per_min };
+    req.plan = {
+      id: row.plan_id,
+      monthlyQuota: row.monthly_quota,
+      rateLimitPerMin: row.rate_limit_per_min,
+      maxUploadMb: row.max_upload_mb,
+    };
 
     pool
       .query('UPDATE api_keys SET last_used_at = now() WHERE id = $1', [row.api_key_id])
