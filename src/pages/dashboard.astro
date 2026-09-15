@@ -229,9 +229,42 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     }
   }
 
-  function fmtInr(paise) {
-    return paise === 0 ? 'Free' : `₹${paise.toLocaleString('en-IN')}/mo`;
+  // Billing is always charged in INR via Razorpay — the $ figure is an
+  // approximate reference conversion for international visitors only.
+  const USD_PER_INR = 1 / 88;
+
+  function fmtInr(priceInr) {
+    return priceInr === 0 ? 'Free' : `₹${priceInr.toLocaleString('en-IN')}/mo`;
   }
+
+  function fmtUsdApprox(priceInr) {
+    if (priceInr === 0) return '';
+    return `≈ $${(priceInr * USD_PER_INR).toFixed(2)}/mo`;
+  }
+
+  const PLAN_META = {
+    free: {
+      tag: 'Getting started',
+      accent: '#888888',
+      accentSoft: '#f5f5f5',
+      icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+      perks: ['Community support'],
+    },
+    starter: {
+      tag: 'For growing apps',
+      accent: '#d69400',
+      accentSoft: '#fef3d7',
+      icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+      perks: ['Higher rate limits', 'Email support'],
+    },
+    pro: {
+      tag: 'For production',
+      accent: '#171717',
+      accentSoft: '#fef3d7',
+      icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 9l3 9h14l3-9-6 3-4-7-4 7z"/></svg>',
+      perks: ['Highest rate limits', 'Priority email support'],
+    },
+  };
 
   async function showSignedIn() {
     const res = await api('/api/me');
@@ -252,7 +285,9 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     document.getElementById('dash-email').textContent = me.user.email;
 
     document.getElementById('dash-plan-name').textContent = me.plan?.plan_name ?? 'Free';
-    document.getElementById('dash-plan-price').textContent = me.plan ? fmtInr(me.plan.price_inr) : '';
+    document.getElementById('dash-plan-price').textContent = me.plan
+      ? [fmtInr(me.plan.price_inr), fmtUsdApprox(me.plan.price_inr)].filter(Boolean).join('  ')
+      : '';
 
     const used = me.usage.used;
     const quota = me.usage.quota || 1;
@@ -287,20 +322,49 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
 
     for (const plan of plans) {
       const isCurrent = plan.id === currentPlanId;
+      const meta = PLAN_META[plan.id] ?? PLAN_META.free;
+      const usd = fmtUsdApprox(plan.price_inr);
+
       const card = document.createElement('div');
-      card.className = `p-4 rounded-[12px] border flex flex-col gap-2 ${
-        isCurrent ? 'border-[#171717] bg-[#fafafa]' : 'border-[#ebebeb]'
+      card.className = `relative p-5 rounded-[14px] border flex flex-col gap-3 transition-colors ${
+        isCurrent ? 'border-[#f5b400]' : 'border-[#ebebeb]'
       }`;
+      if (isCurrent) {
+        card.style.background = 'linear-gradient(180deg, #fffbea, #ffffff)';
+      }
+
       card.innerHTML = `
-        <p class="text-[15px] font-semibold text-[#171717]">${plan.name}</p>
-        <p class="text-[13px] text-[#888888]">${fmtInr(plan.price_inr)}</p>
-        <p class="text-[12px] text-[#4d4d4d]">${plan.monthly_quota.toLocaleString()} / month</p>
+        <div class="w-9 h-9 rounded-[9px] flex items-center justify-center" style="background:${meta.accentSoft}; color:${meta.accent}">
+          ${meta.icon}
+        </div>
+        <div class="flex flex-col gap-1">
+          <p class="text-[16px] font-bold text-[#171717]">${plan.name}</p>
+          <span class="w-fit text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full" style="background:${meta.accentSoft}; color:${meta.accent}">
+            ${meta.tag}
+          </span>
+        </div>
+        <div>
+          <p class="text-[20px] font-bold text-[#171717] leading-tight">${fmtInr(plan.price_inr)}</p>
+          ${usd ? `<p class="text-[12px] text-[#888888]">${usd}</p>` : ''}
+        </div>
+        <ul class="flex flex-col gap-1.5 text-[12px] text-[#4d4d4d]">
+          <li class="flex items-center gap-1.5">
+            <svg width="12" height="12" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            ${plan.monthly_quota.toLocaleString()} compressions / month
+          </li>
+          ${meta.perks.map(perk => `
+            <li class="flex items-center gap-1.5">
+              <svg width="12" height="12" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              ${perk}
+            </li>
+          `).join('')}
+        </ul>
       `;
 
       const btn = document.createElement('button');
       btn.className = isCurrent
-        ? 'mt-2 h-8 text-[12px] font-semibold text-[#888888] bg-[#f0f0f0] rounded-full cursor-default'
-        : 'mt-2 h-8 text-[12px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors';
+        ? 'mt-1 h-9 text-[12px] font-semibold text-[#888888] bg-[#f0f0f0] rounded-full cursor-default'
+        : 'mt-1 h-9 text-[12px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors';
       btn.textContent = isCurrent ? 'Current plan' : plan.price_inr === 0 ? 'Downgrade' : 'Subscribe';
       btn.disabled = isCurrent;
       if (!isCurrent && plan.price_inr > 0) {
