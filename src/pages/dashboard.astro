@@ -74,8 +74,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         <div id="dash-key-existing" class="mb-4 hidden">
           <p class="text-[12px] text-[#888888] mb-1.5">Active key</p>
           <div class="flex items-center gap-2">
-            <div class="flex-1 flex items-center h-10 px-3 rounded-[8px] bg-[#f7f7f7] border border-[#ebebeb] overflow-hidden">
-              <code id="dash-key-prefix" class="flex-1 font-mono text-[13px] text-[#171717] tracking-wide truncate select-none"></code>
+            <div class="flex-1 flex items-center h-10 px-3 rounded-[8px] bg-[#f7f7f7] border border-[#ebebeb] overflow-x-auto">
+              <code id="dash-key-prefix" class="font-mono text-[13px] text-[#171717] tracking-wide whitespace-nowrap select-none"></code>
             </div>
             <button
               id="dash-key-toggle"
@@ -97,10 +97,11 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
               <svg id="dash-key-copy-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="hidden"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
           </div>
+          <p id="dash-key-warn" class="text-[12px] text-[#b45309] mt-1.5 hidden"></p>
         </div>
         <div id="dash-key-raw-box" class="hidden mb-4 p-4 rounded-[10px] bg-[#fffbea] border border-[#f5e0a3]">
           <p class="text-[12px] text-[#8a6d00] mb-2">
-            Copy this now — it won't be shown again.
+            Copy it now, or reveal it again anytime from the Active key field above.
           </p>
           <div class="flex items-center gap-2">
             <code id="dash-key-raw" class="flex-1 font-mono text-[13px] text-[#171717] bg-white px-3 py-2 rounded-[6px] border border-[#ebebeb] overflow-x-auto"></code>
@@ -267,16 +268,56 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
   }
 
   const MASKED_KEY = '•'.repeat(24);
+  // Full key, once fetched via /api/keys/reveal — cleared whenever the active
+  // key changes (regenerate) or the user signs out. Never persisted.
+  let revealedKeyCache = null;
 
-  function setKeyRevealed(revealed) {
+  async function fetchFullKey() {
+    if (revealedKeyCache) return revealedKeyCache;
+    const res = await api('/api/keys/reveal');
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({}));
+      throw new Error(error ?? 'Could not reveal the full key.');
+    }
+    const { apiKey } = await res.json();
+    revealedKeyCache = apiKey;
+    return apiKey;
+  }
+
+  async function setKeyRevealed(revealed) {
     const prefixEl = document.getElementById('dash-key-prefix');
-    prefixEl.textContent = revealed ? prefixEl.dataset.value : MASKED_KEY;
-    prefixEl.dataset.revealed = String(revealed);
-    document.getElementById('dash-key-eye').classList.toggle('hidden', revealed);
-    document.getElementById('dash-key-eye-off').classList.toggle('hidden', !revealed);
     const toggleBtn = document.getElementById('dash-key-toggle');
-    toggleBtn.setAttribute('aria-pressed', String(revealed));
-    toggleBtn.setAttribute('aria-label', revealed ? 'Hide API key' : 'Show API key');
+    const eye = document.getElementById('dash-key-eye');
+    const eyeOff = document.getElementById('dash-key-eye-off');
+    const warnEl = document.getElementById('dash-key-warn');
+
+    if (!revealed) {
+      prefixEl.textContent = MASKED_KEY;
+      prefixEl.dataset.revealed = 'false';
+      eye.classList.remove('hidden');
+      eyeOff.classList.add('hidden');
+      toggleBtn.setAttribute('aria-pressed', 'false');
+      toggleBtn.setAttribute('aria-label', 'Show API key');
+      return;
+    }
+
+    warnEl.classList.add('hidden');
+    toggleBtn.disabled = true;
+    prefixEl.textContent = 'Loading…';
+    try {
+      prefixEl.textContent = await fetchFullKey();
+      prefixEl.dataset.revealed = 'true';
+      eye.classList.add('hidden');
+      eyeOff.classList.remove('hidden');
+      toggleBtn.setAttribute('aria-pressed', 'true');
+      toggleBtn.setAttribute('aria-label', 'Hide API key');
+    } catch (err) {
+      prefixEl.textContent = prefixEl.dataset.value ?? MASKED_KEY;
+      warnEl.textContent = err.message;
+      warnEl.classList.remove('hidden');
+    } finally {
+      toggleBtn.disabled = false;
+    }
   }
 
   function formatQuota(quota) {
@@ -344,6 +385,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       keyExistingEl.classList.remove('hidden');
       keyEmptyEl.classList.add('hidden');
       const prefixEl = document.getElementById('dash-key-prefix');
+      if (prefixEl.dataset.value !== `${me.apiKey.key_prefix}…`) revealedKeyCache = null;
       prefixEl.dataset.value = `${me.apiKey.key_prefix}…`;
       prefixEl.dataset.revealed = 'false';
       setKeyRevealed(false);
@@ -488,6 +530,9 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       document.getElementById('dash-key-raw').textContent = apiKey;
       document.getElementById('dash-key-raw-box').classList.remove('hidden');
       await showSignedIn();
+      // Populate after showSignedIn (which clears the cache on prefix change)
+      // so the reveal toggle works instantly without a round trip.
+      revealedKeyCache = apiKey;
     } catch (err) {
       console.error('[dashboard] key generation failed:', err);
     } finally {
@@ -500,9 +545,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     setKeyRevealed(!revealed);
   });
 
-  document.getElementById('dash-key-prefix-copy').addEventListener('click', () => {
-    const value = document.getElementById('dash-key-prefix').dataset.value ?? '';
-    navigator.clipboard.writeText(value.replace(/…$/, ''));
+  document.getElementById('dash-key-prefix-copy').addEventListener('click', async () => {
+    const warnEl = document.getElementById('dash-key-warn');
+    let value;
+    try {
+      value = await fetchFullKey();
+      warnEl.classList.add('hidden');
+    } catch (err) {
+      warnEl.textContent = err.message;
+      warnEl.classList.remove('hidden');
+      return;
+    }
+    navigator.clipboard.writeText(value).catch(() => {});
 
     const icon = document.getElementById('dash-key-copy-icon');
     const check = document.getElementById('dash-key-copy-check');
@@ -520,6 +574,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
   });
 
   document.getElementById('dash-signout').addEventListener('click', () => {
+    revealedKeyCache = null;
     clearToken();
     showSignedOut();
   });

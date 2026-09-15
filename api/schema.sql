@@ -48,10 +48,12 @@ CREATE TABLE IF NOT EXISTS api_keys (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   key_hash TEXT NOT NULL,
   key_prefix TEXT NOT NULL,
+  encrypted_key TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_used_at TIMESTAMPTZ,
   revoked_at TIMESTAMPTZ
 );
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS encrypted_key TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_key_per_user
   ON api_keys(user_id) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS api_keys_key_hash_idx ON api_keys(key_hash);
