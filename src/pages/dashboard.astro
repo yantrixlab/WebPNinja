@@ -71,9 +71,33 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
           You don't have an API key yet. Generate one to start using the
           <a href="/docs" class="text-[#b45309] hover:underline">Developer API</a>.
         </p>
-        <p id="dash-key-existing" class="text-[14px] text-[#4d4d4d] mb-4 hidden">
-          Active key: <code id="dash-key-prefix" class="font-mono text-[13px] bg-[#f5f5f5] px-2 py-1 rounded-[6px]"></code>
-        </p>
+        <div id="dash-key-existing" class="mb-4 hidden">
+          <p class="text-[12px] text-[#888888] mb-1.5">Active key</p>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center h-10 px-3 rounded-[8px] bg-[#f7f7f7] border border-[#ebebeb] overflow-hidden">
+              <code id="dash-key-prefix" class="flex-1 font-mono text-[13px] text-[#171717] tracking-wide truncate select-none"></code>
+            </div>
+            <button
+              id="dash-key-toggle"
+              type="button"
+              aria-label="Show API key"
+              aria-pressed="false"
+              class="shrink-0 w-10 h-10 flex items-center justify-center rounded-[8px] border border-[#ebebeb] text-[#4d4d4d] hover:bg-[#f5f5f5] hover:text-[#171717] transition-colors"
+            >
+              <svg id="dash-key-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="dash-key-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.53 18.53 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M6.61 6.61A18.45 18.45 0 0 0 1 12s4 8 11 8a9.26 9.26 0 0 0 5.39-1.61"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+            <button
+              id="dash-key-prefix-copy"
+              type="button"
+              aria-label="Copy API key"
+              class="shrink-0 w-10 h-10 flex items-center justify-center rounded-[8px] border border-[#ebebeb] text-[#4d4d4d] hover:bg-[#f5f5f5] hover:text-[#171717] transition-colors"
+            >
+              <svg id="dash-key-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg id="dash-key-copy-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="hidden"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+        </div>
         <div id="dash-key-raw-box" class="hidden mb-4 p-4 rounded-[10px] bg-[#fffbea] border border-[#f5e0a3]">
           <p class="text-[12px] text-[#8a6d00] mb-2">
             Copy this now — it won't be shown again.
@@ -242,6 +266,19 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     return `≈ $${(priceInr * USD_PER_INR).toFixed(2)}/mo`;
   }
 
+  const MASKED_KEY = '•'.repeat(24);
+
+  function setKeyRevealed(revealed) {
+    const prefixEl = document.getElementById('dash-key-prefix');
+    prefixEl.textContent = revealed ? prefixEl.dataset.value : MASKED_KEY;
+    prefixEl.dataset.revealed = String(revealed);
+    document.getElementById('dash-key-eye').classList.toggle('hidden', revealed);
+    document.getElementById('dash-key-eye-off').classList.toggle('hidden', !revealed);
+    const toggleBtn = document.getElementById('dash-key-toggle');
+    toggleBtn.setAttribute('aria-pressed', String(revealed));
+    toggleBtn.setAttribute('aria-label', revealed ? 'Hide API key' : 'Show API key');
+  }
+
   function formatQuota(quota) {
     return quota === -1 ? 'Unlimited' : quota.toLocaleString();
   }
@@ -306,7 +343,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     if (me.apiKey) {
       keyExistingEl.classList.remove('hidden');
       keyEmptyEl.classList.add('hidden');
-      document.getElementById('dash-key-prefix').textContent = `${me.apiKey.key_prefix}…`;
+      const prefixEl = document.getElementById('dash-key-prefix');
+      prefixEl.dataset.value = `${me.apiKey.key_prefix}…`;
+      prefixEl.dataset.revealed = 'false';
+      setKeyRevealed(false);
       document.getElementById('dash-key-generate').textContent = 'Regenerate API Key';
     } else {
       keyEmptyEl.classList.remove('hidden');
@@ -453,6 +493,25 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     } finally {
       btn.disabled = false;
     }
+  });
+
+  document.getElementById('dash-key-toggle').addEventListener('click', () => {
+    const revealed = document.getElementById('dash-key-prefix').dataset.revealed === 'true';
+    setKeyRevealed(!revealed);
+  });
+
+  document.getElementById('dash-key-prefix-copy').addEventListener('click', () => {
+    const value = document.getElementById('dash-key-prefix').dataset.value ?? '';
+    navigator.clipboard.writeText(value.replace(/…$/, ''));
+
+    const icon = document.getElementById('dash-key-copy-icon');
+    const check = document.getElementById('dash-key-copy-check');
+    icon.classList.add('hidden');
+    check.classList.remove('hidden');
+    setTimeout(() => {
+      icon.classList.remove('hidden');
+      check.classList.add('hidden');
+    }, 1200);
   });
 
   document.getElementById('dash-key-copy').addEventListener('click', () => {
