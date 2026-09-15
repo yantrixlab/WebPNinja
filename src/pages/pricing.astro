@@ -1,0 +1,209 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
+---
+
+<Layout
+  title="Pricing — WebP Ninja Developer API"
+  description="Simple, transparent pricing for the WebP Ninja Developer API. Start free, upgrade as you grow. Billed in INR via Razorpay."
+>
+  <Nav />
+
+  <main class="bg-[#fffaf0]">
+    <!-- Hero -->
+    <section class="pt-24 pb-16 px-6 text-center">
+      <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
+        # Pricing
+      </p>
+      <h1 class="text-[40px] sm:text-[48px] font-bold leading-[1.05] tracking-[-1.5px] text-[#171717] mb-4">
+        Simple, transparent pricing.
+      </h1>
+      <p class="text-[17px] leading-[26px] text-[#4d4d4d] max-w-[560px] mx-auto">
+        Start free with the Developer API, upgrade the moment you need more headroom.
+        No hidden fees, cancel anytime.
+      </p>
+    </section>
+
+    <!-- Plans -->
+    <section class="px-6 pb-10">
+      <div id="pricing-cards" class="max-w-[1000px] mx-auto grid gap-6 sm:grid-cols-3 items-start">
+        <!-- Skeleton loading state -->
+        {[1, 2, 3].map(() => (
+          <div class="p-7 rounded-[20px] border border-[#ebebeb] bg-white animate-pulse h-[420px]"></div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Trust row -->
+    <section class="px-6 pb-24">
+      <div class="max-w-[1000px] mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[13px] text-[#888888]">
+        <span class="flex items-center gap-1.5">
+          <svg width="14" height="14" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Cancel anytime
+        </span>
+        <span class="flex items-center gap-1.5">
+          <svg width="14" height="14" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Secure payments via Razorpay
+        </span>
+        <span class="flex items-center gap-1.5">
+          <svg width="14" height="14" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          No setup fees
+        </span>
+        <span class="flex items-center gap-1.5">
+          <svg width="14" height="14" fill="none" stroke="#d69400" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Free plan needs no card
+        </span>
+      </div>
+      <p id="currency-note" class="mt-6 text-center text-[12px] text-[#aaaaaa] max-w-[480px] mx-auto"></p>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script define:vars={{ apiUrl }}>
+  const USD_PER_INR = 1 / 88;
+  const GEO_CACHE_KEY = 'webpninja_geo_country';
+
+  const PLAN_META = {
+    free: {
+      tag: 'Getting started',
+      accent: '#888888',
+      accentSoft: '#f5f5f5',
+      popular: false,
+      icon: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+      perks: ['Community support', 'Standard rate limits'],
+    },
+    starter: {
+      tag: 'For growing apps',
+      accent: '#d69400',
+      accentSoft: '#fef3d7',
+      popular: true,
+      icon: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+      perks: ['Higher rate limits', 'Email support', 'One active API key'],
+    },
+    pro: {
+      tag: 'For production',
+      accent: '#171717',
+      accentSoft: '#fef3d7',
+      popular: false,
+      icon: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 9l3 9h14l3-9-6 3-4-7-4 7z"/></svg>',
+      perks: ['Highest rate limits', 'Priority email support', 'One active API key'],
+    },
+  };
+
+  async function detectCountry() {
+    const cached = sessionStorage.getItem(GEO_CACHE_KEY);
+    if (cached) return cached;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('https://ipwho.is/', { signal: controller.signal });
+      clearTimeout(timeout);
+      const data = await res.json();
+      const code = data?.country_code || 'IN';
+      sessionStorage.setItem(GEO_CACHE_KEY, code);
+      return code;
+    } catch {
+      return 'IN'; // default to India (our actual billing currency) if lookup fails
+    }
+  }
+
+  function formatPrice(priceInr, isIndia) {
+    if (priceInr === 0) return { primary: 'Free', secondary: '' };
+    const usd = (priceInr * USD_PER_INR).toFixed(2);
+    return isIndia
+      ? { primary: `₹${priceInr.toLocaleString('en-IN')}`, secondary: `≈ $${usd} USD` }
+      : { primary: `$${usd}`, secondary: `≈ ₹${priceInr.toLocaleString('en-IN')} INR` };
+  }
+
+  async function render() {
+    const container = document.getElementById('pricing-cards');
+    let country, plansRes;
+    try {
+      [country, plansRes] = await Promise.all([
+        detectCountry(),
+        fetch(`${apiUrl}/api/plans`),
+      ]);
+    } catch (err) {
+      console.error('[pricing] failed to load:', err);
+      container.innerHTML = '<p class="col-span-3 text-center text-[#888888]">Could not reach our servers right now — please refresh the page in a moment.</p>';
+      return;
+    }
+    const isIndia = country === 'IN';
+
+    document.getElementById('currency-note').textContent = isIndia
+      ? 'All plans are billed monthly in INR via Razorpay.'
+      : 'Prices shown in USD for reference — all plans are billed monthly in INR via Razorpay, so the exact charge may vary slightly with exchange rates.';
+
+    if (!plansRes.ok) {
+      container.innerHTML = '<p class="col-span-3 text-center text-[#888888]">Could not load plans right now — please try again shortly.</p>';
+      return;
+    }
+    const { plans } = await plansRes.json();
+    container.innerHTML = '';
+
+    for (const plan of plans) {
+      const meta = PLAN_META[plan.id] ?? PLAN_META.free;
+      const price = formatPrice(plan.price_inr, isIndia);
+
+      const card = document.createElement('div');
+      card.className = `relative flex flex-col gap-5 p-7 rounded-[20px] bg-white transition-transform hover:-translate-y-1 ${
+        meta.popular ? 'border-2 border-[#f5b400]' : 'border border-[#ebebeb]'
+      }`;
+      card.style.boxShadow = meta.popular
+        ? '0 20px 40px rgba(245,180,0,0.18)'
+        : '0 1px 3px rgba(0,0,0,0.04)';
+
+      card.innerHTML = `
+        ${meta.popular ? `
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide text-white" style="background:#171717">
+            Most popular
+          </span>
+        ` : ''}
+        <div class="w-12 h-12 rounded-[12px] flex items-center justify-center" style="background:${meta.accentSoft}; color:${meta.accent}">
+          ${meta.icon}
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <p class="text-[20px] font-bold text-[#171717]">${plan.name}</p>
+          <span class="w-fit text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:${meta.accentSoft}; color:${meta.accent}">
+            ${meta.tag}
+          </span>
+        </div>
+        <div>
+          <p class="text-[40px] font-bold text-[#171717] leading-none">${price.primary}<span class="text-[16px] font-medium text-[#888888]">${plan.price_inr > 0 ? '/mo' : ''}</span></p>
+          ${price.secondary ? `<p class="mt-1.5 text-[13px] text-[#888888]">${price.secondary}</p>` : ''}
+        </div>
+        <ul class="flex flex-col gap-2.5 text-[14px] text-[#4d4d4d] flex-1">
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <strong class="text-[#171717]">${plan.monthly_quota.toLocaleString()}</strong>&nbsp;compressions / month
+          </li>
+          ${meta.perks.map(perk => `
+            <li class="flex items-center gap-2">
+              <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              ${perk}
+            </li>
+          `).join('')}
+        </ul>
+        <a
+          href="/dashboard"
+          class="inline-flex items-center justify-center h-11 rounded-full text-[14px] font-semibold transition-colors ${
+            meta.popular
+              ? 'text-white hover:opacity-90'
+              : 'text-[#171717] bg-[#f5f5f5] hover:bg-[#ebebeb]'
+          }"
+          style="${meta.popular ? 'background:#171717' : ''}"
+        >
+          ${plan.price_inr === 0 ? 'Get started free' : 'Sign in to subscribe'}
+        </a>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  render();
+</script>
