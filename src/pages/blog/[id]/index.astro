@@ -1,0 +1,124 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import Nav from '../../../components/Nav.astro';
+import Footer from '../../../components/Footer.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const postUrl = `${siteUrl}/blog/${post.id}/`;
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.publishDate.toISOString(),
+  ...(post.data.updatedDate && { dateModified: post.data.updatedDate.toISOString() }),
+  url: postUrl,
+  author: {
+    "@type": "Organization",
+    name: "WebP Ninja",
+  },
+};
+---
+
+<Layout title={`${post.data.title} — WebP Ninja Blog`} description={post.data.description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  </Fragment>
+  <Nav />
+  <main class="max-w-[720px] mx-auto px-6 py-16">
+    <a href="/blog/" class="font-mono text-[12px] text-[#888888] hover:text-[#171717] transition-colors">
+      &larr; All posts
+    </a>
+
+    <header class="mt-6 mb-10">
+      <p class="font-mono text-[12px] text-[#888888] mb-3">
+        {dateFormatter.format(post.data.publishDate)}
+      </p>
+      <h1 class="text-[30px] sm:text-[36px] font-semibold tracking-[-0.5px] text-[#171717] leading-tight">
+        {post.data.title}
+      </h1>
+    </header>
+
+    <article class="prose-blog text-[16px] leading-[26px] text-[#333333]">
+      <Content />
+    </article>
+
+    <div class="mt-16 pt-8 border-t border-[#ebebeb]">
+      <a
+        href="/#compressor"
+        class="inline-flex items-center gap-1.5 px-4 h-9 text-[14px] font-medium text-white bg-[#171717] rounded-[6px] hover:bg-[#333] transition-colors"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#f5b400"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Try WebP Ninja — compress your images free
+      </a>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .prose-blog :global(h2) {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: #171717;
+    margin-top: 2.2em;
+    margin-bottom: 0.6em;
+  }
+  .prose-blog :global(p) {
+    margin-bottom: 1.1em;
+  }
+  .prose-blog :global(ul),
+  .prose-blog :global(ol) {
+    margin-bottom: 1.1em;
+    padding-left: 1.4em;
+  }
+  .prose-blog :global(li) {
+    margin-bottom: 0.4em;
+  }
+  .prose-blog :global(li > ul),
+  .prose-blog :global(li > ol) {
+    margin-top: 0.4em;
+    margin-bottom: 0;
+  }
+  .prose-blog :global(ul) {
+    list-style: disc;
+  }
+  .prose-blog :global(ol) {
+    list-style: decimal;
+  }
+  .prose-blog :global(strong) {
+    font-weight: 600;
+    color: #171717;
+  }
+  .prose-blog :global(a) {
+    color: #7a4a00;
+    text-decoration: underline;
+  }
+  .prose-blog :global(code) {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    background: #f5f5f5;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+</style>

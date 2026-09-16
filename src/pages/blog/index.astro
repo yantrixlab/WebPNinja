@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+const posts = allPosts.sort(
+  (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
+);
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Layout
+  title="Blog — WebP Ninja"
+  description="Guides on image compression, PNG vs WebP, and shrinking image file size without losing quality."
+>
+  <Nav />
+  <main class="max-w-[860px] mx-auto px-6 py-16">
+    <header class="mb-12">
+      <h1 class="text-[32px] sm:text-[40px] font-semibold tracking-[-0.6px] text-[#171717] mb-3">
+        Blog
+      </h1>
+      <p class="text-[16px] leading-[24px] text-[#4d4d4d]">
+        Guides on image compression, formats, and web performance.
+      </p>
+    </header>
+
+    <ul class="flex flex-col gap-8">
+      {posts.map((post) => (
+        <li class="pb-8 border-b border-[#ebebeb] last:border-0">
+          <a href={`/blog/${post.id}/`} class="group block">
+            <p class="font-mono text-[12px] text-[#888888] mb-2">
+              {dateFormatter.format(post.data.publishDate)}
+            </p>
+            <h2 class="text-[22px] font-semibold tracking-[-0.3px] text-[#171717] group-hover:text-[#7a4a00] transition-colors mb-2">
+              {post.data.title}
+            </h2>
+            <p class="text-[15px] leading-[22px] text-[#4d4d4d]">
+              {post.data.description}
+            </p>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </main>
+  <Footer />
+</Layout>
