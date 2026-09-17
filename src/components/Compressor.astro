@@ -970,6 +970,17 @@ fileGrid.addEventListener('click', (e) => {
   downloadFile(id);
 });
 
+fileGrid.addEventListener('click', (e) => {
+  const btn = (e.target as Element).closest('[data-reupload-id]') as HTMLElement | null;
+  if (!btn) return;
+  const id = btn.dataset.reuploadId!;
+  const item = store.get(id);
+  if (!item) return;
+  item.status = 'queued';
+  resetCardForRecompress(id);
+  compressFile(id);
+});
+
 /* ══════════════ STATS ══════════════ */
 
 function updateStats() {
@@ -1080,11 +1091,21 @@ function scheduleRecompress() {
 
 async function recompressAll() {
   for (const [id, item] of store) {
-    if (item.file && item.status !== 'error') {
-      item.status = 'queued';
-      resetCardForRecompress(id);
-      await compressFile(id);
+    if (!item.file || item.status === 'error') continue;
+
+    // A file already routed through the server fallback means "recompress"
+    // means "re-upload the whole original again" — on a slow connection
+    // that's the multi-minute-or-timeout upload all over again, silently,
+    // for every quality/format tweak. Require an explicit click instead of
+    // firing that off automatically.
+    if (item.fallbackConsented) {
+      markNeedsReupload(id);
+      continue;
     }
+
+    item.status = 'queued';
+    resetCardForRecompress(id);
+    await compressFile(id);
   }
 }
 
@@ -1096,6 +1117,28 @@ function resetCardForRecompress(id: string) {
   if (progress) progress.innerHTML = `<div class="h-full bg-[#ebebeb] rounded-full w-full animate-pulse"></div>`;
   if (actions) actions.innerHTML = '';
   setCardLoading(id, true);
+}
+
+function markNeedsReupload(id: string) {
+  const actions = document.getElementById(`actions-${id}`);
+  if (actions) {
+    actions.innerHTML = `
+      <button
+        data-reupload-id="${id}"
+        class="w-full inline-flex items-center justify-center gap-2 h-10 px-4 text-[13px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98]"
+        style="background:#b45309"
+      >
+        Settings changed — re-upload &amp; recompress
+      </button>
+    `;
+  }
+  const meta = document.getElementById(`meta-${id}`);
+  if (meta) {
+    const note = document.createElement('div');
+    note.className = 'mt-1 text-[10px] text-[#b45309]';
+    note.textContent = 'Showing the previous result until you recompress';
+    meta.appendChild(note);
+  }
 }
 
 /* ══════════════ CLEAR ══════════════ */
