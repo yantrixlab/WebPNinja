@@ -44,9 +44,10 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
   }
 
   try {
-    const { buffer, mime } = await compressImage(req.file.buffer, { format, quality });
+    const { buffer, mime, resizedFrom } = await compressImage(req.file.buffer, { format, quality });
     await incrementUsage(req.apiUserId);
     res.setHeader('Content-Type', mime);
+    if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);
   } catch (err) {
     console.error('[compress]', err.message);
@@ -91,8 +92,9 @@ compressRouter.post('/api/v1/compress/fallback', fallbackRateLimit, (req, res, n
   }
 
   try {
-    const { buffer, mime } = await compressImage(req.file.buffer, { format, quality });
+    const { buffer, mime, resizedFrom } = await compressImage(req.file.buffer, { format, quality });
     res.setHeader('Content-Type', mime);
+    if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);
   } catch (err) {
     console.error('[compress/fallback]', err.message);

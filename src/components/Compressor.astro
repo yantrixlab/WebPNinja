@@ -306,6 +306,10 @@ interface FileItem {
   /** True if the current blob was produced by the server fallback rather
    *  than the in-browser codecs — drives the "compressed on server" badge. */
   viaServer: boolean;
+  /** Set when the server downscaled the image to fit the output format's
+   *  dimension limit (e.g. WebP/AVIF) — the original size as "WxH", for
+   *  a note on the result card; null otherwise. */
+  resizedFrom: string | null;
 }
 
 /* ── State ── */
@@ -486,6 +490,7 @@ async function addFiles(fileList: FileList) {
       fallbackConsented: false,
       fallbackDeclined: false,
       viaServer: false,
+      resizedFrom: null,
     };
     store.set(id, item);
     appendCard(id, file, thumbUrl);
@@ -549,6 +554,7 @@ async function compressFile(id: string) {
     item.blob = blob;
     item.status = 'done';
     item.viaServer = false;
+    item.resizedFrom = null;
     item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
 
     setCardDone(id, blob, item.savedPct);
@@ -579,12 +585,20 @@ async function compressFile(id: string) {
 /** POSTs via XMLHttpRequest rather than fetch specifically to get real
  *  upload-progress events — fetch has no cross-browser way to observe how
  *  much of the request body has actually been sent yet. */
+interface ServerCompressResult {
+  blob: Blob;
+  /** Set when the server had to downscale the image to fit an output
+   *  format's hard dimension limit (e.g. WebP/AVIF) — the original size,
+   *  as "WxH", for display; null when no resize was needed. */
+  resizedFrom: string | null;
+}
+
 function uploadWithProgress(
   url: string,
   formData: FormData,
   onUploadProgress: (pct: number) => void,
   onUploadDone: () => void,
-): Promise<Blob> {
+): Promise<ServerCompressResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -599,7 +613,7 @@ function uploadWithProgress(
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(xhr.response as Blob);
+        resolve({ blob: xhr.response as Blob, resizedFrom: xhr.getResponseHeader('X-Resized-From') });
         return;
       }
       const errorBlob = xhr.response as Blob;
@@ -635,7 +649,7 @@ async function compressFileOnServer(id: string, myGen: number, q: number, fmt: s
     fd.append('quality', String(q));
 
     setCardPhase(id, 'Uploading…', 0);
-    const blob = await uploadWithProgress(
+    const { blob, resizedFrom } = await uploadWithProgress(
       `${API_URL}/api/v1/compress/fallback`,
       fd,
       (pct) => { if (item.genId === myGen) setCardPhase(id, `Uploading… ${pct}%`, pct); },
@@ -649,6 +663,7 @@ async function compressFileOnServer(id: string, myGen: number, q: number, fmt: s
     item.blob = blob;
     item.status = 'done';
     item.viaServer = true;
+    item.resizedFrom = resizedFrom;
     item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
 
     setCardDone(id, blob, item.savedPct);
@@ -879,6 +894,7 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
         <span class="ml-auto font-bold text-[13px]" style="color:${accentColor}">−${savedPct}%</span>
       </div>
       ${item.viaServer ? `<div class="mt-1 text-[10px] font-semibold text-[#b45309] uppercase tracking-wide">Compressed on server</div>` : ''}
+      ${item.resizedFrom ? `<div class="mt-0.5 text-[10px] text-[#999]">Resized from ${escHtml(item.resizedFrom.replace('x', '×'))}px — too large for ${mimeToExt(item.outputMime).toUpperCase()}'s max resolution</div>` : ''}
     `;
   }
 

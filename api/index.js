@@ -14,7 +14,10 @@ const PORT = process.env.PORT || 3001;
 const ORIGIN = process.env.ALLOWED_ORIGIN || 'https://webpninja.com';
 
 const app = express();
-app.use(cors({ origin: ORIGIN }));
+// exposedHeaders: without this, browsers hide every response header from JS
+// except a small built-in allowlist — X-Resized-From (compress routes) would
+// silently read as null via fetch/XHR otherwise.
+app.use(cors({ origin: ORIGIN, exposedHeaders: ['X-Resized-From'] }));
 
 // Registered before express.json(): Razorpay webhook signatures are verified
 // against the exact raw request bytes, which json() would otherwise consume.

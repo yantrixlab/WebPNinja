@@ -17,7 +17,18 @@ export const SUPPORTED_FORMATS = ['webp', 'jpeg', 'png', 'avif'];
 // failed identically on both the WASM and sharp-native paths. Still well
 // short of `false` (fully unlimited) since the multer upload-size cap is the
 // only other bound protecting this route from a crafted decompression bomb.
-const SHARP_MAX_PIXELS = 400_000_000;
+// (A real 27866×15682px/437MP upload is the reason this is as high as it is —
+// raise further if a legitimate image ever exceeds this too.)
+const SHARP_MAX_PIXELS = 1_000_000_000;
+
+// WebP's bitstream and HEIF's (AVIF's container) both hard-cap dimensions —
+// a format-level limit no encoder, WASM or native, can be configured around.
+// Empirically confirmed against sharp/libvips directly: 16384×16384 encodes
+// fine, 16385 on either side fails ("too large for the WebP/HEIF format").
+// Rather than reject an oversized image outright, it's downscaled (never
+// upscaled) to fit before encoding — still private, still compressed, just
+// at a resolution the format can actually represent.
+const MAX_DIMENSION_BY_FORMAT = { webp: 16383, avif: 16384 };
 
 // image-q's quantization is pure JS with no internal memory ceiling of its
 // own (unlike the WASM encoders below, which fail with a catchable error
@@ -117,9 +128,22 @@ export async function compressImage(inputBuffer, { format, quality }) {
     throw new Error(`Image is ${meta.width}×${meta.height}px (${Math.round(totalPixels / 1_000_000)} megapixels) — exceeds this server's ${Math.round(SHARP_MAX_PIXELS / 1_000_000)}MP processing limit`);
   }
 
+  // Downscale up front if the target format can't represent these
+  // dimensions at all — every codec attempt below would otherwise fail
+  // identically regardless of memory, quality, or encoder used.
+  let workingBuffer = inputBuffer;
+  let resizedFrom = null;
+  const maxDim = MAX_DIMENSION_BY_FORMAT[format];
+  if (maxDim && (meta.width > maxDim || meta.height > maxDim)) {
+    workingBuffer = await sharp(inputBuffer, { limitInputPixels: false })
+      .resize({ width: maxDim, height: maxDim, fit: 'inside', withoutEnlargement: true })
+      .toBuffer();
+    resizedFrom = { width: meta.width, height: meta.height };
+  }
+
   let imageData;
   try {
-    imageData = await decodeToImageData(inputBuffer);
+    imageData = await decodeToImageData(workingBuffer);
 
     let buffer;
     switch (format) {
@@ -143,7 +167,7 @@ export async function compressImage(inputBuffer, { format, quality }) {
       }
     }
 
-    return { buffer: Buffer.from(buffer), mime: MIME_BY_FORMAT[format] };
+    return { buffer: Buffer.from(buffer), mime: MIME_BY_FORMAT[format], resizedFrom };
   } catch (err) {
     // The WASM codecs decode the whole image into a raw RGBA buffer in
     // linear memory with a fixed ceiling well below what libvips can
@@ -151,23 +175,7 @@ export async function compressImage(inputBuffer, { format, quality }) {
     // tool's server-side fallback exists for) can decode fine and then
     // blow past that ceiling on encode.
     console.warn('[compressImage] WASM codec failed, falling back to sharp native encoder:', err.message);
-    try {
-      const buffer = await sharpNativeEncode(inputBuffer, format, q);
-      return { buffer, mime: MIME_BY_FORMAT[format] };
-    } catch (fallbackErr) {
-      // WebP's bitstream and HEIF's (AVIF's container) both hard-cap
-      // dimensions — a format-level limit no encoder (WASM or libvips) can
-      // work around, distinct from every other "too large" case above which
-      // is really about available memory. Give a specific, actionable
-      // message rather than the generic failure.
-      const dims = imageData ? ` (${imageData.width}×${imageData.height}px)` : '';
-      if (format === 'webp' && /too large for the webp format/i.test(fallbackErr.message)) {
-        throw new Error(`This image${dims} exceeds WebP's maximum dimension of 16,383px per side — try JPEG, PNG, or AVIF instead.`);
-      }
-      if (format === 'avif' && /too large for the heif format/i.test(fallbackErr.message)) {
-        throw new Error(`This image${dims} exceeds AVIF's maximum supported dimensions — try JPEG or PNG instead.`);
-      }
-      throw fallbackErr;
-    }
+    const buffer = await sharpNativeEncode(workingBuffer, format, q);
+    return { buffer, mime: MIME_BY_FORMAT[format], resizedFrom };
   }
 }
