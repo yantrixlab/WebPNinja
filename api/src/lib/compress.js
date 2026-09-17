@@ -9,6 +9,26 @@ import { ensureCodecsInitialized } from './wasmInit.js';
 
 export const SUPPORTED_FORMATS = ['webp', 'jpeg', 'png', 'avif'];
 
+// sharp/libvips refuses to decode anything over ~268M px by default (a
+// decompression-bomb guard) — but images too large for the browser to
+// compress itself (the whole reason this server path exists) are exactly
+// the ones likely to cross that line, and both decode paths below hit the
+// same default, so raising it once here fixed a real oversized upload that
+// failed identically on both the WASM and sharp-native paths. Still well
+// short of `false` (fully unlimited) since the multer upload-size cap is the
+// only other bound protecting this route from a crafted decompression bomb.
+const SHARP_MAX_PIXELS = 400_000_000;
+
+// image-q's quantization is pure JS with no internal memory ceiling of its
+// own (unlike the WASM encoders below, which fail with a catchable error
+// once they hit their fixed allocation) — past a certain size it just keeps
+// consuming heap until V8 hits a fatal, generally *uncatchable* OOM that
+// kills the whole process, not just this request. A real 20000×18000px
+// upload crashed the server entirely at this step. Past this threshold we
+// skip straight to sharp's native (libimagequant-backed) palette encoder,
+// which does the same kind of quantization in native code with no such risk.
+const PNG_QUANTIZE_MAX_PIXELS = 40_000_000;
+
 const MIME_BY_FORMAT = {
   webp: 'image/webp',
   jpeg: 'image/jpeg',
@@ -23,7 +43,7 @@ const MIME_BY_FORMAT = {
  * object stands in for the DOM's ImageData class here in Node.
  */
 async function decodeToImageData(inputBuffer) {
-  const { data, info } = await sharp(inputBuffer)
+  const { data, info } = await sharp(inputBuffer, { limitInputPixels: SHARP_MAX_PIXELS })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -59,12 +79,18 @@ async function quantizeImageData(imageData, quality) {
  * of slightly different output characteristics than the WASM path.
  */
 async function sharpNativeEncode(inputBuffer, format, quality) {
-  const pipeline = sharp(inputBuffer);
+  const pipeline = sharp(inputBuffer, { limitInputPixels: SHARP_MAX_PIXELS });
   switch (format) {
     case 'jpeg': return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer();
     case 'webp': return pipeline.webp({ quality }).toBuffer();
     case 'avif': return pipeline.avif({ quality }).toBuffer();
-    case 'png':  return pipeline.png({ quality, compressionLevel: 9 }).toBuffer();
+    case 'png': {
+      // palette:true runs libimagequant (native, pngquant-style) instead of
+      // a plain lossless re-encode — keeps output size comparable to the
+      // primary image-q path this is standing in for.
+      const numColors = Math.max(8, Math.min(256, Math.round(8 + (quality / 100) * 248)));
+      return pipeline.png({ palette: true, quality, colors: numColors, effort: 8 }).toBuffer();
+    }
     default:     throw new Error(`Unsupported format: ${format}`);
   }
 }
@@ -81,8 +107,9 @@ export async function compressImage(inputBuffer, { format, quality }) {
   const q = Math.max(10, Math.min(100, Math.round(quality)));
   await ensureCodecsInitialized();
 
+  let imageData;
   try {
-    const imageData = await decodeToImageData(inputBuffer);
+    imageData = await decodeToImageData(inputBuffer);
 
     let buffer;
     switch (format) {
@@ -96,6 +123,9 @@ export async function compressImage(inputBuffer, { format, quality }) {
         buffer = await avifEncode(imageData, { quality: q, speed: 6 });
         break;
       case 'png': {
+        if (imageData.width * imageData.height > PNG_QUANTIZE_MAX_PIXELS) {
+          throw new Error(`Image too large (${imageData.width}×${imageData.height}px) for in-process PNG quantization`);
+        }
         const quantized = await quantizeImageData(imageData, q);
         const pngBuf = await pngEncode(quantized);
         buffer = await oxipng(pngBuf, { level: 4 });
@@ -111,7 +141,23 @@ export async function compressImage(inputBuffer, { format, quality }) {
     // tool's server-side fallback exists for) can decode fine and then
     // blow past that ceiling on encode.
     console.warn('[compressImage] WASM codec failed, falling back to sharp native encoder:', err.message);
-    const buffer = await sharpNativeEncode(inputBuffer, format, q);
-    return { buffer, mime: MIME_BY_FORMAT[format] };
+    try {
+      const buffer = await sharpNativeEncode(inputBuffer, format, q);
+      return { buffer, mime: MIME_BY_FORMAT[format] };
+    } catch (fallbackErr) {
+      // WebP's bitstream and HEIF's (AVIF's container) both hard-cap
+      // dimensions — a format-level limit no encoder (WASM or libvips) can
+      // work around, distinct from every other "too large" case above which
+      // is really about available memory. Give a specific, actionable
+      // message rather than the generic failure.
+      const dims = imageData ? ` (${imageData.width}×${imageData.height}px)` : '';
+      if (format === 'webp' && /too large for the webp format/i.test(fallbackErr.message)) {
+        throw new Error(`This image${dims} exceeds WebP's maximum dimension of 16,383px per side — try JPEG, PNG, or AVIF instead.`);
+      }
+      if (format === 'avif' && /too large for the heif format/i.test(fallbackErr.message)) {
+        throw new Error(`This image${dims} exceeds AVIF's maximum supported dimensions — try JPEG or PNG instead.`);
+      }
+      throw fallbackErr;
+    }
   }
 }

@@ -50,7 +50,7 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
     res.send(buffer);
   } catch (err) {
     console.error('[compress]', err.message);
-    res.status(422).json({ error: 'Could not compress the provided file', detail: err.message });
+    res.status(422).json({ error: err.message || 'Could not compress the provided file' });
   }
 });
 
@@ -96,6 +96,6 @@ compressRouter.post('/api/v1/compress/fallback', fallbackRateLimit, (req, res, n
     res.send(buffer);
   } catch (err) {
     console.error('[compress/fallback]', err.message);
-    res.status(422).json({ error: 'Could not compress the provided file', detail: err.message });
+    res.status(422).json({ error: err.message || 'Could not compress the provided file' });
   }
 });
