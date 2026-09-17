@@ -516,7 +516,9 @@ async function compressFile(id: string) {
 
   try {
     const mime = getMime(item.file.type, myFormat);
-    const blob = await compress(item.file, myQuality, mime);
+    const blob = await compress(item.file, myQuality, mime, (label) => {
+      if (item.genId === myGen) setCardPhase(id, label);
+    });
 
     // A newer compression was requested while this one was in flight — drop it.
     if (item.genId !== myGen) return;
@@ -537,6 +539,7 @@ async function compressFile(id: string) {
     console.error('[compress]', err);
 
     if (!item.fallbackDeclined && API_URL) {
+      setCardPhase(id, 'Waiting for confirmation…');
       const proceed = await confirmServerFallback(
         (err as Error)?.message || 'This image could not be processed in your browser.'
       );
@@ -553,6 +556,50 @@ async function compressFile(id: string) {
   }
 }
 
+/** POSTs via XMLHttpRequest rather than fetch specifically to get real
+ *  upload-progress events — fetch has no cross-browser way to observe how
+ *  much of the request body has actually been sent yet. */
+function uploadWithProgress(
+  url: string,
+  formData: FormData,
+  onUploadProgress: (pct: number) => void,
+  onUploadDone: () => void,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.responseType = 'blob';
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onUploadProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    // Fires once the request body has been fully sent — the gap between
+    // this and xhr.onload is genuinely the server thinking, not more upload.
+    xhr.upload.onload = () => onUploadDone();
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.response as Blob);
+        return;
+      }
+      const errorBlob = xhr.response as Blob;
+      errorBlob.text()
+        .then((text) => {
+          try {
+            const body = JSON.parse(text);
+            reject(new Error(body?.error || `Server compression failed (HTTP ${xhr.status})`));
+          } catch {
+            reject(new Error(`Server compression failed (HTTP ${xhr.status})`));
+          }
+        })
+        .catch(() => reject(new Error(`Server compression failed (HTTP ${xhr.status})`)));
+    };
+    xhr.onerror = () => reject(new Error('Network error while uploading to the server'));
+
+    xhr.send(formData);
+  });
+}
+
 /** Compresses via the unauthenticated /api/v1/compress/fallback route —
  *  used only when the browser itself can't decode/process the file (see the
  *  fallback-confirm flow above). Never called for the common case. */
@@ -567,15 +614,13 @@ async function compressFileOnServer(id: string, myGen: number, q: number, fmt: s
     fd.append('format', fmt);
     fd.append('quality', String(q));
 
-    const resp = await fetch(`${API_URL}/api/v1/compress/fallback`, { method: 'POST', body: fd });
-    if (item.genId !== myGen) return;
-
-    if (!resp.ok) {
-      const body = await resp.json().catch(() => ({} as any));
-      throw new Error(body?.error || `Server compression failed (HTTP ${resp.status})`);
-    }
-
-    const blob = await resp.blob();
+    setCardPhase(id, 'Uploading…', 0);
+    const blob = await uploadWithProgress(
+      `${API_URL}/api/v1/compress/fallback`,
+      fd,
+      (pct) => { if (item.genId === myGen) setCardPhase(id, `Uploading… ${pct}%`, pct); },
+      () => { if (item.genId === myGen) setCardPhase(id, 'Compressing on server…'); },
+    );
     if (item.genId !== myGen) return;
 
     item.outputMime = blob.type || mime;
@@ -700,11 +745,13 @@ async function quantizeImageData(imageData: ImageData, quality: number): Promise
   return new ImageData(new Uint8ClampedArray(rgba.buffer), imageData.width, imageData.height);
 }
 
-async function compress(file: File, q: number, mime: string): Promise<Blob> {
+async function compress(file: File, q: number, mime: string, onPhase?: (label: string) => void): Promise<Blob> {
+  onPhase?.('Decoding…');
   const imageData = await getImageData(file);
   let buffer: ArrayBuffer;
 
   try {
+    onPhase?.('Compressing…');
     switch (mime) {
       case 'image/jpeg': {
         if (!_jpegEncode) _jpegEncode = (await import('@jsquash/jpeg/encode')).default;
@@ -725,29 +772,36 @@ async function compress(file: File, q: number, mime: string): Promise<Blob> {
       case 'image/png': {
         if (!_pngEncode) _pngEncode = (await import('@jsquash/png/encode')).default;
         if (!_oxipng)    _oxipng    = (await import('@jsquash/oxipng/optimise')).default;
-        // Lossy quantization (pngquant-style) → lossless oxipng deflate optimization
+        // Lossy quantization (pngquant-style) → lossless oxipng deflate optimization.
+        // Quantization is the slow step for large images (naive per-pixel JS
+        // color-distance math), so it gets its own phase label.
+        onPhase?.('Quantizing colors…');
         const quantized = await quantizeImageData(imageData, q);
+        onPhase?.('Encoding…');
         const pngBuf    = await _pngEncode(quantized);
+        onPhase?.('Optimizing…');
         buffer = await _oxipng(pngBuf, { level: 4 });
         break;
       }
       default:
-        return canvasFallback(file, q, mime);
+        return canvasFallback(file, q, mime, onPhase);
     }
   } catch (err) {
     console.warn('[compress] codec failed, falling back to canvas:', err);
-    return canvasFallback(file, q, mime);
+    return canvasFallback(file, q, mime, onPhase);
   }
 
   return new Blob([buffer], { type: mime });
 }
 
-function canvasFallback(file: File, q: number, mime: string): Promise<Blob> {
+function canvasFallback(file: File, q: number, mime: string, onPhase?: (label: string) => void): Promise<Blob> {
   return new Promise((resolve, reject) => {
+    onPhase?.('Decoding…');
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
+      onPhase?.('Compressing…');
       const canvas = document.createElement('canvas');
       canvas.width  = img.naturalWidth;
       canvas.height = img.naturalHeight;
@@ -784,7 +838,10 @@ function appendCard(id: string, file: File, thumbUrl: string) {
       <!-- Spinner overlay -->
       <div id="spinner-${id}" class="absolute inset-0 bg-white/90 backdrop-blur-[3px] flex flex-col items-center justify-center gap-3">
         <div class="w-9 h-9 border-[2.5px] border-[#e0e0e0] border-t-[#171717] rounded-full animate-spin"></div>
-        <span class="text-[11px] font-mono text-[#888888] tracking-wider">COMPRESSING</span>
+        <div class="flex items-center gap-1.5">
+          <span id="spinner-label-${id}" class="text-[11px] font-mono text-[#888888] tracking-wider uppercase">Preparing…</span>
+          <span id="spinner-elapsed-${id}" class="text-[10px] font-mono text-[#cccccc]"></span>
+        </div>
       </div>
       <!-- Savings badge -->
       <div id="badge-${id}" class="hidden absolute top-3 left-3"></div>
@@ -819,6 +876,54 @@ function setCardLoading(id: string, loading: boolean) {
   if (spinner) {
     spinner.style.display = loading ? 'flex' : 'none';
   }
+  if (loading) {
+    startElapsedTimer(id);
+  } else {
+    stopElapsedTimer(id);
+  }
+}
+
+/** Updates the spinner's phase label (e.g. "Decoding…", "Uploading… 42%").
+ *  When `pct` is given, the progress bar switches from its indeterminate
+ *  pulse to a determinate fill at that percentage — used for real upload
+ *  progress, since that's the only phase where we actually know how far
+ *  along it is. */
+function setCardPhase(id: string, label: string, pct?: number) {
+  const labelEl = document.getElementById(`spinner-label-${id}`);
+  if (labelEl) labelEl.textContent = label;
+
+  const progress = document.getElementById(`progress-${id}`);
+  if (progress) {
+    progress.innerHTML = typeof pct === 'number'
+      ? `<div class="h-full bg-[#171717] rounded-full transition-all duration-150" style="width:${Math.max(0, Math.min(100, pct))}%"></div>`
+      : `<div class="h-full bg-[#e0e0e0] rounded-full w-full animate-pulse"></div>`;
+  }
+}
+
+// Ticks a "Ns" readout next to the phase label so a slow (but not stuck)
+// compression of a huge image doesn't look frozen with no feedback at all.
+const elapsedTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+function startElapsedTimer(id: string) {
+  stopElapsedTimer(id);
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const el = document.getElementById(`spinner-elapsed-${id}`);
+    if (!el) return;
+    const secs = Math.round((Date.now() - start) / 1000);
+    el.textContent = secs >= 3 ? `(${secs}s)` : '';
+  }, 1000);
+  elapsedTimers.set(id, timer);
+}
+
+function stopElapsedTimer(id: string) {
+  const timer = elapsedTimers.get(id);
+  if (timer) {
+    clearInterval(timer);
+    elapsedTimers.delete(id);
+  }
+  const el = document.getElementById(`spinner-elapsed-${id}`);
+  if (el) el.textContent = '';
 }
 
 function setCardDone(id: string, blob: Blob, savedPct: number) {
@@ -1043,9 +1148,10 @@ function resetCardForRecompress(id: string) {
 /* ══════════════ CLEAR ══════════════ */
 
 clearBtn.addEventListener('click', () => {
-  for (const [, item] of store) {
+  for (const [id, item] of store) {
     if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
     if (item.thumbUrl) URL.revokeObjectURL(item.thumbUrl);
+    stopElapsedTimer(id);
   }
   store.clear();
   fileGrid.innerHTML = '';
