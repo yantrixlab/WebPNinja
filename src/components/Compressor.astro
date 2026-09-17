@@ -472,7 +472,30 @@ let _oxipng:     ((d: ArrayBuffer, o?: any) => Promise<ArrayBuffer>) | null = nu
 // accurate reason instead of a generic decode failure.
 const MAX_CANVAS_PIXELS = 200_000_000;
 
-function getImageData(file: File): Promise<ImageData> {
+// Reads the intrinsic width/height straight out of the file's header bytes,
+// with no image decode involved. Lets us reject an oversized file BEFORE
+// asking the browser's <img> decoder to touch it — a decoder that's about to
+// choke on a huge image typically just fires a bare, uninformative onerror
+// rather than reporting dimensions.
+async function peekImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  const head = new Uint8Array(await file.slice(0, 33).arrayBuffer());
+  const view = new DataView(head.buffer);
+
+  // PNG: 8-byte signature, then IHDR chunk holds width/height as big-endian u32s.
+  const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (PNG_SIG.every((b, i) => head[i] === b) && head.length >= 24) {
+    return { width: view.getUint32(16), height: view.getUint32(20) };
+  }
+
+  return null;
+}
+
+async function getImageData(file: File): Promise<ImageData> {
+  const dims = await peekImageDimensions(file).catch(() => null);
+  if (dims && dims.width * dims.height > MAX_CANVAS_PIXELS) {
+    throw new Error(`Image is ${dims.width}×${dims.height}px — too large for your browser to process (limit ~${MAX_CANVAS_PIXELS.toLocaleString()}px total)`);
+  }
+
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -499,7 +522,11 @@ function getImageData(file: File): Promise<ImageData> {
         reject(new Error(`Browser ran out of memory decoding this image: ${(err as Error).message}`));
       }
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Browser could not decode this file as an image')); };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      reject(new Error(`Browser could not decode this ${sizeMb} MB file — it's likely too large or memory-constrained for this browser tab`));
+    };
     img.src = url;
   });
 }
