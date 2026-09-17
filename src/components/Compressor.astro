@@ -450,6 +450,17 @@ document.addEventListener('paste', (e) => {
   }
 });
 
+/* ══════════════ WARN BEFORE LEAVING MID-COMPRESSION ══════════════ */
+// Browsers no longer allow a custom message here (removed industry-wide to
+// stop phishing-style abuse) — this just triggers the browser's own native
+// "Leave site? / Cancel" confirmation, which is the closest thing possible.
+window.addEventListener('beforeunload', (e) => {
+  const isActive = Array.from(store.values()).some((item) => item.status === 'compressing');
+  if (!isActive) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
 /* ══════════════ ADD FILES ══════════════ */
 
 async function addFiles(fileList: FileList) {
