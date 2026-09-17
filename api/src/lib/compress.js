@@ -53,6 +53,23 @@ async function quantizeImageData(imageData, quality) {
 }
 
 /**
+ * Encodes via sharp/libvips directly instead of the jsquash WASM codecs.
+ * Used only as a fallback (see below) for images too large for those WASM
+ * modules' fixed memory ceiling — libvips has no such ceiling, at the cost
+ * of slightly different output characteristics than the WASM path.
+ */
+async function sharpNativeEncode(inputBuffer, format, quality) {
+  const pipeline = sharp(inputBuffer);
+  switch (format) {
+    case 'jpeg': return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer();
+    case 'webp': return pipeline.webp({ quality }).toBuffer();
+    case 'avif': return pipeline.avif({ quality }).toBuffer();
+    case 'png':  return pipeline.png({ quality, compressionLevel: 9 }).toBuffer();
+    default:     throw new Error(`Unsupported format: ${format}`);
+  }
+}
+
+/**
  * Compresses inputBuffer to the given output format/quality using the exact
  * same jsquash calls and options as the browser tool (src/components/Compressor.astro),
  * so API output quality matches the free tool at the same settings.
@@ -63,26 +80,38 @@ export async function compressImage(inputBuffer, { format, quality }) {
   }
   const q = Math.max(10, Math.min(100, Math.round(quality)));
   await ensureCodecsInitialized();
-  const imageData = await decodeToImageData(inputBuffer);
 
-  let buffer;
-  switch (format) {
-    case 'jpeg':
-      buffer = await jpegEncode(imageData, { quality: q });
-      break;
-    case 'webp':
-      buffer = await webpEncode(imageData, { quality: q, method: 6, sns_strength: 90, filter_strength: 60 });
-      break;
-    case 'avif':
-      buffer = await avifEncode(imageData, { quality: q, speed: 6 });
-      break;
-    case 'png': {
-      const quantized = await quantizeImageData(imageData, q);
-      const pngBuf = await pngEncode(quantized);
-      buffer = await oxipng(pngBuf, { level: 4 });
-      break;
+  try {
+    const imageData = await decodeToImageData(inputBuffer);
+
+    let buffer;
+    switch (format) {
+      case 'jpeg':
+        buffer = await jpegEncode(imageData, { quality: q });
+        break;
+      case 'webp':
+        buffer = await webpEncode(imageData, { quality: q, method: 6, sns_strength: 90, filter_strength: 60 });
+        break;
+      case 'avif':
+        buffer = await avifEncode(imageData, { quality: q, speed: 6 });
+        break;
+      case 'png': {
+        const quantized = await quantizeImageData(imageData, q);
+        const pngBuf = await pngEncode(quantized);
+        buffer = await oxipng(pngBuf, { level: 4 });
+        break;
+      }
     }
-  }
 
-  return { buffer: Buffer.from(buffer), mime: MIME_BY_FORMAT[format] };
+    return { buffer: Buffer.from(buffer), mime: MIME_BY_FORMAT[format] };
+  } catch (err) {
+    // The WASM codecs decode the whole image into a raw RGBA buffer in
+    // linear memory with a fixed ceiling well below what libvips can
+    // handle — a very large image (this is the exact case the browser
+    // tool's server-side fallback exists for) can decode fine and then
+    // blow past that ceiling on encode.
+    console.warn('[compressImage] WASM codec failed, falling back to sharp native encoder:', err.message);
+    const buffer = await sharpNativeEncode(inputBuffer, format, q);
+    return { buffer, mime: MIME_BY_FORMAT[format] };
+  }
 }

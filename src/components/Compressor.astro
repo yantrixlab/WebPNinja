@@ -1,4 +1,5 @@
 ---
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
 ---
 
 <!-- ══════════════ HERO + DROP ZONE ══════════════ -->
@@ -245,6 +246,38 @@
 
 </section>
 
+<!-- ══════════════ SERVER FALLBACK CONFIRM MODAL ══════════════ -->
+<!-- Shown only when a file is too large/high-resolution for the browser to
+     compress itself. The homepage promises "your files never leave your
+     device" — this dialog is what keeps that promise honest for the one
+     file where it isn't true. -->
+<div id="fallback-modal" class="hidden fixed inset-0 z-[100] items-center justify-center p-6" style="background:rgba(0,0,0,0.5)">
+  <div class="w-full max-w-[420px] bg-white rounded-[16px] p-6 flex flex-col gap-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:#fef3d7">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+      </div>
+      <p class="text-[15px] font-bold text-[#171717]">Too large for your browser</p>
+    </div>
+    <p id="fallback-modal-reason" class="text-[13px] leading-[20px] text-[#666]"></p>
+    <p class="text-[12px] leading-[18px] text-[#999]">
+      We can compress it on our server instead. This one file will be uploaded, processed, and immediately discarded — it's never stored.
+    </p>
+    <div class="flex items-center gap-2 mt-1">
+      <button id="fallback-modal-cancel" class="flex-1 h-10 text-[13px] font-medium text-[#555] border border-[#e8e8e8] rounded-[10px] hover:border-[#171717] hover:text-[#171717] transition-colors bg-white">
+        Skip this file
+      </button>
+      <button id="fallback-modal-confirm" class="flex-1 h-10 text-[13px] font-semibold text-white rounded-[10px]" style="background:#171717">
+        Upload &amp; compress
+      </button>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ apiUrl }}>
+  window.__WEBPNINJA_API_URL__ = apiUrl;
+</script>
+
 <!-- ══════════════ CLIENT-SIDE COMPRESSOR SCRIPT ══════════════ -->
 <script>
 import JSZip from 'jszip';
@@ -263,6 +296,16 @@ interface FileItem {
    *  stale in-flight result (e.g. from before a quality/format change)
    *  detect it's outdated and avoid overwriting a newer result. */
   genId: number;
+  /** True once the user has agreed to upload this specific file to the
+   *  server-side fallback — recompresses (quality/format changes) then skip
+   *  straight to the server instead of re-trying the browser and re-asking. */
+  fallbackConsented: boolean;
+  /** True once the user has declined the fallback for this file, so we
+   *  don't nag them again on every recompress. */
+  fallbackDeclined: boolean;
+  /** True if the current blob was produced by the server fallback rather
+   *  than the in-browser codecs — drives the "compressed on server" badge. */
+  viaServer: boolean;
 }
 
 /* ── State ── */
@@ -271,6 +314,9 @@ let quality = 20;
 let outputFormat = 'webp';
 let isDragActive = false;
 let recompressTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Set by the sibling define:vars script tag above.
+const API_URL: string = (window as any).__WEBPNINJA_API_URL__ || '';
 
 /* ── DOM refs ── */
 const dropzone        = document.getElementById('dropzone')!;
@@ -293,6 +339,40 @@ const downloadAllBtn  = document.getElementById('download-all') as HTMLButtonEle
 const statsEl         = document.getElementById('stats')!;
 const fileCountEl     = document.getElementById('file-count')!;
 const totalSavedEl    = document.getElementById('total-saved')!;
+const fallbackModal      = document.getElementById('fallback-modal')!;
+const fallbackReasonEl   = document.getElementById('fallback-modal-reason')!;
+const fallbackConfirmBtn = document.getElementById('fallback-modal-confirm') as HTMLButtonElement;
+const fallbackCancelBtn  = document.getElementById('fallback-modal-cancel') as HTMLButtonElement;
+
+/* ══════════════ SERVER FALLBACK CONFIRM ══════════════ */
+
+// Serializes confirm prompts so simultaneous failures (e.g. several huge
+// files dropped at once) show one dialog at a time instead of racing.
+let fallbackModalChain: Promise<unknown> = Promise.resolve();
+
+function confirmServerFallback(reason: string): Promise<boolean> {
+  const run = (): Promise<boolean> => new Promise((resolve) => {
+    fallbackReasonEl.textContent = reason;
+    fallbackModal.classList.remove('hidden');
+    fallbackModal.classList.add('flex');
+
+    const cleanup = (result: boolean) => {
+      fallbackModal.classList.add('hidden');
+      fallbackModal.classList.remove('flex');
+      fallbackConfirmBtn.removeEventListener('click', onConfirm);
+      fallbackCancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onConfirm = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    fallbackConfirmBtn.addEventListener('click', onConfirm);
+    fallbackCancelBtn.addEventListener('click', onCancel);
+  });
+
+  const result = fallbackModalChain.then(run);
+  fallbackModalChain = result.catch(() => {});
+  return result;
+}
 
 /* ══════════════ DRAG & DROP ══════════════ */
 
@@ -392,6 +472,9 @@ async function addFiles(fileList: FileList) {
       objectUrl: null,
       thumbUrl,
       genId: 0,
+      fallbackConsented: false,
+      fallbackDeclined: false,
+      viaServer: false,
     };
     store.set(id, item);
     appendCard(id, file, thumbUrl);
@@ -424,6 +507,13 @@ async function compressFile(id: string) {
   item.status = 'compressing';
   setCardLoading(id, true);
 
+  // Once the user has agreed to server-side fallback for this file, skip
+  // straight to it on future recompresses (quality/format changes) instead
+  // of re-failing in the browser and re-prompting every time.
+  if (item.fallbackConsented) {
+    return compressFileOnServer(id, myGen, myQuality, myFormat);
+  }
+
   try {
     const mime = getMime(item.file.type, myFormat);
     const blob = await compress(item.file, myQuality, mime);
@@ -436,6 +526,7 @@ async function compressFile(id: string) {
     item.objectUrl = URL.createObjectURL(blob);
     item.blob = blob;
     item.status = 'done';
+    item.viaServer = false;
     item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
 
     setCardDone(id, blob, item.savedPct);
@@ -444,6 +535,63 @@ async function compressFile(id: string) {
   } catch (err) {
     if (item.genId !== myGen) return;
     console.error('[compress]', err);
+
+    if (!item.fallbackDeclined && API_URL) {
+      const proceed = await confirmServerFallback(
+        (err as Error)?.message || 'This image could not be processed in your browser.'
+      );
+      if (item.genId !== myGen) return;
+      if (proceed) {
+        item.fallbackConsented = true;
+        return compressFileOnServer(id, myGen, myQuality, myFormat);
+      }
+      item.fallbackDeclined = true;
+    }
+
+    item.status = 'error';
+    setCardError(id, (err as Error)?.message);
+  }
+}
+
+/** Compresses via the unauthenticated /api/v1/compress/fallback route —
+ *  used only when the browser itself can't decode/process the file (see the
+ *  fallback-confirm flow above). Never called for the common case. */
+async function compressFileOnServer(id: string, myGen: number, q: number, fmt: string) {
+  const item = store.get(id);
+  if (!item) return;
+
+  try {
+    const mime = getMime(item.file.type, fmt);
+    const fd = new FormData();
+    fd.append('file', item.file);
+    fd.append('format', fmt);
+    fd.append('quality', String(q));
+
+    const resp = await fetch(`${API_URL}/api/v1/compress/fallback`, { method: 'POST', body: fd });
+    if (item.genId !== myGen) return;
+
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({} as any));
+      throw new Error(body?.error || `Server compression failed (HTTP ${resp.status})`);
+    }
+
+    const blob = await resp.blob();
+    if (item.genId !== myGen) return;
+
+    item.outputMime = blob.type || mime;
+    if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+    item.objectUrl = URL.createObjectURL(blob);
+    item.blob = blob;
+    item.status = 'done';
+    item.viaServer = true;
+    item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
+
+    setCardDone(id, blob, item.savedPct);
+    updateStats();
+    window.dispatchEvent(new CustomEvent('webpninja:compressed', { detail: { count: 1 } }));
+  } catch (err) {
+    if (item.genId !== myGen) return;
+    console.error('[compress:fallback]', err);
     item.status = 'error';
     setCardError(id, (err as Error)?.message);
   }
@@ -709,6 +857,7 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
         <span class="text-[#171717] font-semibold text-[13px]">${formatBytes(blob.size)}</span>
         <span class="ml-auto font-bold text-[13px]" style="color:${accentColor}">−${savedPct}%</span>
       </div>
+      ${item.viaServer ? `<div class="mt-1 text-[10px] font-semibold text-[#b45309] uppercase tracking-wide">Compressed on server</div>` : ''}
     `;
   }
 
