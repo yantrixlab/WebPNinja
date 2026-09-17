@@ -107,6 +107,16 @@ export async function compressImage(inputBuffer, { format, quality }) {
   const q = Math.max(10, Math.min(100, Math.round(quality)));
   await ensureCodecsInitialized();
 
+  // Cheap header read (no full pixel decode) so a genuinely oversized image
+  // is rejected immediately with real dimensions in the message, instead of
+  // wasting a decode attempt just to get sharp's generic "exceeds pixel
+  // limit" string back with no size information in it at all.
+  const meta = await sharp(inputBuffer, { limitInputPixels: false }).metadata();
+  const totalPixels = (meta.width ?? 0) * (meta.height ?? 0);
+  if (totalPixels > SHARP_MAX_PIXELS) {
+    throw new Error(`Image is ${meta.width}×${meta.height}px (${Math.round(totalPixels / 1_000_000)} megapixels) — exceeds this server's ${Math.round(SHARP_MAX_PIXELS / 1_000_000)}MP processing limit`);
+  }
+
   let imageData;
   try {
     imageData = await decodeToImageData(inputBuffer);
