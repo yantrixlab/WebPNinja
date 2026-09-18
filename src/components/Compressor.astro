@@ -291,7 +291,9 @@ interface FileItem {
   outputMime: string;
   savedPct: number;
   objectUrl: string | null;
-  thumbUrl: string;
+  /** Null when the original file is too large to safely hand to an <img>
+   *  tag for a live preview — see addFiles(). */
+  thumbUrl: string | null;
   /** Bumped every time a compression is requested for this card; lets a
    *  stale in-flight result (e.g. from before a quality/format change)
    *  detect it's outdated and avoid overwriting a newer result. */
@@ -476,7 +478,16 @@ async function addFiles(fileList: FileList) {
 
   for (const file of accepted) {
     const id = crypto.randomUUID();
-    const thumbUrl = URL.createObjectURL(file);
+
+    // Pointing an <img> at the original file forces the browser's own
+    // native decoder to fully decode it just to paint a small preview —
+    // for a genuinely huge image (hundreds of megapixels) that alone can
+    // OOM-crash the whole tab, bypassing every size guard our own
+    // compression pipeline has, since it happens outside our JS entirely.
+    const dims = await peekImageDimensions(file).catch(() => null);
+    const tooLargeForPreview = !!dims && dims.width * dims.height > MAX_CANVAS_PIXELS;
+    const thumbUrl = tooLargeForPreview ? null : URL.createObjectURL(file);
+
     const item: FileItem = {
       file,
       originalSize: file.size,
@@ -773,20 +784,25 @@ function compressInWorker(file: File, quality: number, mime: string, onPhase: (l
 
 /* ══════════════ CARD UI ══════════════ */
 
-function appendCard(id: string, file: File, thumbUrl: string) {
+function appendCard(id: string, file: File, thumbUrl: string | null) {
   const card = document.createElement('div');
   card.id = `card-${id}`;
   card.className = 'animate-slide-up bg-white rounded-[16px] overflow-hidden flex flex-col border border-[#f0f0f0] shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)] transition-all duration-200';
 
+  // A huge image gets no live preview at all (see addFiles) — pointing an
+  // <img> at it would force the browser's own decoder to fully decode it
+  // just to paint a thumbnail, which is exactly what crashed the tab.
+  const thumbMarkup = thumbUrl
+    ? `<img src="${thumbUrl}" alt="${escHtml(file.name)}" class="w-full h-full object-contain p-4" onload="URL.revokeObjectURL(this.src)" />`
+    : `<div class="w-full h-full flex flex-col items-center justify-center gap-2 text-[#ccc]">
+         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+         <span class="text-[10px] font-mono uppercase tracking-wide">Preview unavailable — image too large</span>
+       </div>`;
+
   card.innerHTML = `
     <!-- Thumbnail -->
     <div class="relative bg-[#f7f7f7] overflow-hidden" style="aspect-ratio:4/3">
-      <img
-        src="${thumbUrl}"
-        alt="${escHtml(file.name)}"
-        class="w-full h-full object-contain p-4"
-        onload="URL.revokeObjectURL(this.src)"
-      />
+      ${thumbMarkup}
       <!-- Spinner overlay -->
       <div id="spinner-${id}" class="absolute inset-0 bg-white/90 backdrop-blur-[3px] flex flex-col items-center justify-center gap-3">
         <div class="w-9 h-9 border-[2.5px] border-[#e0e0e0] border-t-[#171717] rounded-full animate-spin"></div>
