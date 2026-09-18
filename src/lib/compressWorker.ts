@@ -18,6 +18,16 @@ declare const self: DedicatedWorkerGlobalScope;
 // — kept here too as a safety net for formats that check can't recognize.
 const MAX_CANVAS_PIXELS = 200_000_000;
 
+// image-q's quantization is pure JS with no internal memory ceiling of its
+// own — unlike the jsquash WASM encoders, which fail with a catchable error
+// once they hit their fixed allocation, a large image here just keeps
+// consuming heap until the tab hits a fatal, uncatchable OOM (this is the
+// same failure mode fixed server-side in api/src/lib/compress.js — this is
+// the client-side mirror of that fix, which had been missed here). Past
+// this threshold, skip straight to the browser's native canvas PNG encoder
+// instead, which has no such risk (at the cost of no lossy quantization).
+const PNG_QUANTIZE_MAX_PIXELS = 40_000_000;
+
 let _jpegEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
 let _webpEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
 let _avifEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null;
@@ -100,6 +110,10 @@ async function compress(file: File, q: number, mime: string, onPhase: (label: st
         break;
       }
       case 'image/png': {
+        if (imageData.width * imageData.height > PNG_QUANTIZE_MAX_PIXELS) {
+          onPhase('Encoding (large image)…');
+          return canvasFallback(file, q, mime);
+        }
         if (!_pngEncode) _pngEncode = (await import('@jsquash/png/encode')).default;
         if (!_oxipng)    _oxipng    = (await import('@jsquash/oxipng/optimise')).default;
         onPhase('Quantizing colors…');

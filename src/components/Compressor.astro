@@ -317,6 +317,7 @@ interface FileItem {
 /* ── State ── */
 const store = new Map<string, FileItem>();
 let quality = 20;
+const SUPPORTED_OUTPUT_FORMATS = ['webp', 'jpeg', 'png', 'avif'];
 let outputFormat = 'webp';
 let isDragActive = false;
 let recompressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1170,8 +1171,21 @@ qualitySlider.addEventListener('input', () => {
   scheduleRecompress();
 });
 
+// WebP is the default for first-time visitors, but once someone picks a
+// different format we treat that as their preference and remember it for
+// next time — restored below, before anything else reads outputFormat.
+const FORMAT_PREF_KEY = 'webpninja_preferred_format';
+try {
+  const savedFormat = localStorage.getItem(FORMAT_PREF_KEY);
+  if (savedFormat && SUPPORTED_OUTPUT_FORMATS.includes(savedFormat)) {
+    outputFormat = savedFormat;
+    formatSelect.value = savedFormat;
+  }
+} catch { /* localStorage unavailable (private mode, etc.) — WebP default stands */ }
+
 formatSelect.addEventListener('change', () => {
   outputFormat = formatSelect.value;
+  try { localStorage.setItem(FORMAT_PREF_KEY, outputFormat); } catch { /* ignore */ }
 
   // WebP compresses far more aggressively than other formats at the same
   // quality value, so default to a much lower quality when switching to it.
