@@ -142,10 +142,10 @@ export async function compressImage(inputBuffer, { format, quality }) {
   }
 
   let imageData;
+  let buffer;
   try {
     imageData = await decodeToImageData(workingBuffer);
 
-    let buffer;
     switch (format) {
       case 'jpeg':
         buffer = await jpegEncode(imageData, { quality: q });
@@ -166,8 +166,7 @@ export async function compressImage(inputBuffer, { format, quality }) {
         break;
       }
     }
-
-    return { buffer: Buffer.from(buffer), mime: MIME_BY_FORMAT[format], resizedFrom };
+    buffer = Buffer.from(buffer);
   } catch (err) {
     // The WASM codecs decode the whole image into a raw RGBA buffer in
     // linear memory with a fixed ceiling well below what libvips can
@@ -175,7 +174,29 @@ export async function compressImage(inputBuffer, { format, quality }) {
     // tool's server-side fallback exists for) can decode fine and then
     // blow past that ceiling on encode.
     console.warn('[compressImage] WASM codec failed, falling back to sharp native encoder:', err.message);
-    const buffer = await sharpNativeEncode(workingBuffer, format, q);
-    return { buffer, mime: MIME_BY_FORMAT[format], resizedFrom };
+    buffer = await sharpNativeEncode(workingBuffer, format, q);
   }
+
+  // Palette quantization/dithering occasionally backfires on an image that
+  // doesn't actually benefit from color reduction (e.g. one that's already
+  // highly regular/well-compressed) — a "compressor" that hands back
+  // something bigger than what came in has failed at its one job. Only
+  // applies when the request wasn't already asking to convert formats,
+  // since a same-size format conversion still has value on its own.
+  if (format === 'png' && meta.format === 'png' && buffer.length >= workingBuffer.length) {
+    try {
+      const relossless = await sharp(workingBuffer, { limitInputPixels: SHARP_MAX_PIXELS })
+        .png({ palette: false, compressionLevel: 9, effort: 10 })
+        .toBuffer();
+      if (relossless.length < buffer.length) buffer = relossless;
+    } catch (err) {
+      console.warn('[compressImage] lossless re-encode retry failed:', err.message);
+    }
+    // Still not smaller than the original? Don't pretend — hand it back
+    // unchanged rather than shipping something larger under the guise of
+    // "compression".
+    if (buffer.length >= workingBuffer.length) buffer = workingBuffer;
+  }
+
+  return { buffer, mime: MIME_BY_FORMAT[format], resizedFrom };
 }

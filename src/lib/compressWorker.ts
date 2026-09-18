@@ -164,9 +164,20 @@ self.onmessage = async (e: MessageEvent<CompressRequest>) => {
   if (type !== 'compress') return;
 
   try {
-    const blob = await compress(file, quality, mime, (label) => {
+    let blob = await compress(file, quality, mime, (label) => {
       self.postMessage({ type: 'phase', reqId, label });
     });
+
+    // Never hand back something bigger than the original for a same-format
+    // request — quantization/dithering/canvas re-encoding can occasionally
+    // backfire on an image that doesn't actually benefit from any of it
+    // (confirmed: a highly regular test PNG came out ~8x larger through the
+    // server's equivalent path). A "compressor" that grows the file has
+    // failed at its one job, so fall back to the original bytes untouched.
+    if (mime === 'image/png' && file.type === 'image/png' && blob.size >= file.size) {
+      blob = file;
+    }
+
     self.postMessage({ type: 'done', reqId, blob });
   } catch (err) {
     self.postMessage({ type: 'error', reqId, message: (err as Error)?.message || 'Compression failed' });

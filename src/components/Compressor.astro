@@ -553,6 +553,25 @@ async function compressFile(id: string) {
       throw new Error(`Image is ${dims.width}×${dims.height}px — too large for your browser to process (limit ~${MAX_CANVAS_PIXELS.toLocaleString()}px total)`);
     }
 
+    // A large PNG is technically processable client-side but only with a
+    // much weaker, lossless-only fallback (see compressWorker.ts) — offer
+    // the server's real quantization instead of silently under-compressing.
+    if (
+      myFormat === 'png' && !item.fallbackDeclined && API_URL &&
+      dims && dims.width * dims.height > PNG_QUANTIZE_MAX_PIXELS
+    ) {
+      setCardPhase(id, 'Waiting for confirmation…');
+      const proceed = await confirmServerFallback(
+        `This image (${dims.width}×${dims.height}px) is large enough that your browser can only apply lossless PNG compression, which won't shrink it much. Our server can apply much stronger compression instead.`
+      );
+      if (item.genId !== myGen) return;
+      if (proceed) {
+        item.fallbackConsented = true;
+        return compressFileOnServer(id, myGen, myQuality, myFormat);
+      }
+      item.fallbackDeclined = true;
+    }
+
     const blob = await compressInWorker(item.file, myQuality, mime, (label) => {
       if (item.genId === myGen) setCardPhase(id, label);
     });
@@ -725,6 +744,16 @@ function getMime(inputMime: string, fmt: string): string {
 // blank/tainted result. Guarded here (cheaply, before dispatch) and again
 // inside the worker as a safety net for formats this header check misses.
 const MAX_CANVAS_PIXELS = 200_000_000;
+
+// Mirrors compressWorker.ts's PNG_QUANTIZE_MAX_PIXELS: past this size the
+// worker skips real (image-q) quantization for crash-safety and falls back
+// to a lossless-only re-encode, which barely shrinks a photo/screenshot
+// with lots of distinct colors (verified: -3% on a real 27MB file that
+// image-q would otherwise take down to a fraction of that). Below, this is
+// used to proactively offer the server path — which does real quantization
+// via libimagequant at any size — instead of silently accepting that weak
+// result.
+const PNG_QUANTIZE_MAX_PIXELS = 40_000_000;
 
 // Reads the intrinsic width/height straight out of the file's header bytes,
 // with no image decode involved. Lets us reject an oversized file BEFORE
