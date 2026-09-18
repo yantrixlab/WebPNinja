@@ -96,11 +96,19 @@ async function sharpNativeEncode(inputBuffer, format, quality) {
     case 'webp': return pipeline.webp({ quality }).toBuffer();
     case 'avif': return pipeline.avif({ quality }).toBuffer();
     case 'png': {
-      // palette:true runs libimagequant (native, pngquant-style) instead of
-      // a plain lossless re-encode — keeps output size comparable to the
-      // primary image-q path this is standing in for.
+      // palette:true runs libimagequant (native, pngquant-style) for the
+      // color reduction, but libvips' own PNG writer follows it with only a
+      // middling zlib pass — oxipng's filter/strategy search does notably
+      // better. IMPORTANT: oxipng's cost scales with pixel count (it scans
+      // every scanline per strategy attempt), not final byte size as
+      // assumed initially — level 4 hung past 90s+ on a real 61-megapixel
+      // image and took the whole server down with it (this call runs on
+      // the main thread, unlike sharp's own native calls above, which run
+      // on libuv's threadpool and don't block other requests). Level 1
+      // keeps this bounded regardless of image size.
       const numColors = Math.max(8, Math.min(256, Math.round(8 + (quality / 100) * 248)));
-      return pipeline.png({ palette: true, quality, colors: numColors, effort: 8 }).toBuffer();
+      const quantized = await pipeline.png({ palette: true, quality, colors: numColors, effort: 10 }).toBuffer();
+      return oxipng(quantized, { level: 1 });
     }
     default:     throw new Error(`Unsupported format: ${format}`);
   }
@@ -174,7 +182,12 @@ export async function compressImage(inputBuffer, { format, quality }) {
     // tool's server-side fallback exists for) can decode fine and then
     // blow past that ceiling on encode.
     console.warn('[compressImage] WASM codec failed, falling back to sharp native encoder:', err.message);
-    buffer = await sharpNativeEncode(workingBuffer, format, q);
+    // oxipng (used internally for the PNG case) returns a raw ArrayBuffer,
+    // not a Buffer — .length on that is undefined, which silently defeated
+    // every size comparison below (buffer.length >= N is always false when
+    // buffer.length is undefined). Normalize to a real Buffer here so the
+    // safety net below actually runs regardless of which branch produced it.
+    buffer = Buffer.from(await sharpNativeEncode(workingBuffer, format, q));
   }
 
   // Palette quantization/dithering occasionally backfires on an image that

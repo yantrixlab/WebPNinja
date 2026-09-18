@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { requireApiKey, incrementUsage } from '../middleware/requireApiKey.js';
-import { compressImage, SUPPORTED_FORMATS } from '../lib/compress.js';
+import { SUPPORTED_FORMATS } from '../lib/compress.js';
+import { compressImageIsolated } from '../lib/compressPool.js';
 import { rateLimit } from '../lib/rateLimiter.js';
 
 // Hard ceiling across all plans; the actual per-plan limit is enforced below
@@ -44,7 +45,7 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
   }
 
   try {
-    const { buffer, mime, resizedFrom } = await compressImage(req.file.buffer, { format, quality });
+    const { buffer, mime, resizedFrom } = await compressImageIsolated(req.file.buffer, { format, quality });
     await incrementUsage(req.apiUserId);
     res.setHeader('Content-Type', mime);
     if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
@@ -92,7 +93,7 @@ compressRouter.post('/api/v1/compress/fallback', fallbackRateLimit, (req, res, n
   }
 
   try {
-    const { buffer, mime, resizedFrom } = await compressImage(req.file.buffer, { format, quality });
+    const { buffer, mime, resizedFrom } = await compressImageIsolated(req.file.buffer, { format, quality });
     res.setHeader('Content-Type', mime);
     if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);
