@@ -111,8 +111,24 @@ async function compress(file: File, q: number, mime: string, onPhase: (label: st
       }
       case 'image/png': {
         if (imageData.width * imageData.height > PNG_QUANTIZE_MAX_PIXELS) {
+          // The browser's native canvas PNG encoder does no palette
+          // reduction and barely any compression effort — on its own it can
+          // come out *larger* than the original. oxipng operates on the
+          // already-encoded PNG bytes (lossless recompression), not the raw
+          // pixel buffer, so it doesn't carry image-q's crash risk here.
           onPhase('Encoding (large image)…');
-          return canvasFallback(file, q, mime);
+          const nativeBlob = await canvasFallback(file, q, mime);
+          if (!_oxipng) _oxipng = (await import('@jsquash/oxipng/optimise')).default;
+          onPhase('Optimizing…');
+          // level 4's exhaustive filter-strategy search is fine on typical
+          // output sizes, but on a highly-compressible large image (a smooth
+          // gradient/screenshot, as opposed to noise) the search space blows
+          // up — measured 3+ minutes on a 61-megapixel gradient at level 4
+          // vs. seconds at level 1. This path exists to be the fast, safe
+          // fallback, so it stays cheap even at the cost of a larger output
+          // than the primary path would give.
+          const optimized = await _oxipng(await nativeBlob.arrayBuffer(), { level: 1 });
+          return new Blob([optimized], { type: mime });
         }
         if (!_pngEncode) _pngEncode = (await import('@jsquash/png/encode')).default;
         if (!_oxipng)    _oxipng    = (await import('@jsquash/oxipng/optimise')).default;
