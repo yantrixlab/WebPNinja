@@ -112,10 +112,11 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         </div>
         <button
           id="dash-key-generate"
-          class="inline-flex items-center h-9 px-4 text-[13px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors"
+          class="inline-flex items-center h-9 px-4 text-[13px] font-semibold text-white bg-[#171717] rounded-full hover:bg-[#333] transition-colors disabled:opacity-50"
         >
           Generate API Key
         </button>
+        <p id="dash-key-generate-error" class="text-[12px] text-[#ee0000] mt-2 hidden"></p>
       </div>
 
       <!-- Plans -->
@@ -522,10 +523,15 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
 
   document.getElementById('dash-key-generate').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
+    const errorEl = document.getElementById('dash-key-generate-error');
     btn.disabled = true;
+    errorEl.classList.add('hidden');
     try {
       const res = await api('/api/keys/generate', { method: 'POST' });
-      if (!res.ok) throw new Error('Could not generate key');
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error ?? 'Could not generate key.');
+      }
       const { apiKey } = await res.json();
       document.getElementById('dash-key-raw').textContent = apiKey;
       document.getElementById('dash-key-raw-box').classList.remove('hidden');
@@ -534,7 +540,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       // so the reveal toggle works instantly without a round trip.
       revealedKeyCache = apiKey;
     } catch (err) {
+      // Previously silent (console.error only) — a failed request looked
+      // identical to a successful no-op click, with nothing telling the
+      // user it didn't work or why.
       console.error('[dashboard] key generation failed:', err);
+      errorEl.textContent = err.message || 'Could not generate a new key. Please try again.';
+      errorEl.classList.remove('hidden');
     } finally {
       btn.disabled = false;
     }
@@ -568,9 +579,20 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     }, 1200);
   });
 
-  document.getElementById('dash-key-copy').addEventListener('click', () => {
+  document.getElementById('dash-key-copy').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
     const raw = document.getElementById('dash-key-raw').textContent;
-    navigator.clipboard.writeText(raw ?? '');
+    // Previously fired-and-forgot with no success/failure feedback at all —
+    // a click did copy the key, but looked exactly like a dead button.
+    try {
+      await navigator.clipboard.writeText(raw ?? '');
+      btn.textContent = 'Copied!';
+    } catch (err) {
+      console.error('[dashboard] copy failed:', err);
+      btn.textContent = 'Copy failed';
+    } finally {
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+    }
   });
 
   document.getElementById('dash-signout').addEventListener('click', () => {
