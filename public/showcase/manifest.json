@@ -1,0 +1,20 @@
+[
+  {
+    "name": "photo",
+    "origSize": 414041,
+    "compSize": 8740,
+    "pct": 98
+  },
+  {
+    "name": "screenshot",
+    "origSize": 122599,
+    "compSize": 5528,
+    "pct": 95
+  },
+  {
+    "name": "graphic",
+    "origSize": 227990,
+    "compSize": 7844,
+    "pct": 97
+  }
+]

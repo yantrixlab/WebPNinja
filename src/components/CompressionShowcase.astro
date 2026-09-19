@@ -1,0 +1,246 @@
+---
+import { readFileSync } from 'node:fs';
+
+interface Manifest { name: string; origSize: number; compSize: number; pct: number }
+
+const manifestPath = new URL('../../public/showcase/manifest.json', import.meta.url);
+const manifest: Manifest[] = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+const byName = Object.fromEntries(manifest.map((m) => [m.name, m]));
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+const examples = [
+  {
+    key: 'photo',
+    label: 'Photography',
+    original: '/showcase/photo-original.jpg',
+    compressed: '/showcase/photo-compressed.webp',
+    fromFormat: 'JPEG',
+    toFormat: 'WebP',
+  },
+  {
+    key: 'screenshot',
+    label: 'Screenshots',
+    original: '/showcase/screenshot-original.jpg',
+    compressed: '/showcase/screenshot-compressed.webp',
+    fromFormat: 'PNG',
+    toFormat: 'WebP',
+  },
+  {
+    key: 'graphic',
+    label: 'Graphics',
+    original: '/showcase/graphic-original.jpg',
+    compressed: '/showcase/graphic-compressed.webp',
+    fromFormat: 'PNG',
+    toFormat: 'WebP',
+  },
+].map((e) => ({
+  ...e,
+  originalSize: formatBytes(byName[e.key].origSize),
+  compressedSize: formatBytes(byName[e.key].compSize),
+  pct: byName[e.key].pct,
+}));
+---
+
+<section id="showcase" class="bg-white py-24 px-6 border-t border-[#ebebeb]">
+  <div class="max-w-[1100px] mx-auto">
+
+    <!-- Section header -->
+    <div class="mb-14 flex flex-col items-center text-center">
+      <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
+        # See It In Action
+      </p>
+      <h2 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] max-w-[600px]">
+        Same look. A fraction of the size.
+      </h2>
+      <p class="mt-4 text-[16px] leading-[24px] text-[#4d4d4d] max-w-[500px]">
+        Drag the divider — this is what real compression looks like. No visible quality loss, dramatically smaller files.
+      </p>
+    </div>
+
+    <!-- Category switcher -->
+    <div class="flex items-center justify-center gap-2 mb-8" role="tablist" aria-label="Example category">
+      {examples.map((ex, i) => (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+          data-example-tab={ex.key}
+          class="showcase-tab inline-flex items-center h-9 px-4 rounded-full text-[13px] font-semibold transition-all duration-150"
+          class:list={[i === 0 ? 'bg-[#171717] text-white' : 'bg-[#f5f5f5] text-[#666] hover:bg-[#ebebeb]']}
+        >
+          {ex.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Comparison slider -->
+    <div id="showcase-slider" class="relative w-full max-w-[900px] mx-auto rounded-[20px] overflow-hidden select-none shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-[#ebebeb]" style="aspect-ratio:1400/900">
+
+      {examples.map((ex, i) => (
+        <div
+          data-example-panel={ex.key}
+          class="absolute inset-0"
+          style={i === 0 ? '' : 'display:none'}
+        >
+          <!-- Base layer: original -->
+          <img src={ex.original} alt={`${ex.label} — original`} class="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable="false" />
+          <!-- Top layer: compressed, clipped to reveal on drag -->
+          <div class="reveal-layer absolute inset-0 overflow-hidden" style="clip-path: inset(0 50% 0 0)">
+            <img src={ex.compressed} alt={`${ex.label} — compressed`} class="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable="false" />
+          </div>
+
+          <!-- Corner labels — the reveal-layer clips from the right, so the
+               compressed image is visible on the left of the handle and the
+               original (base layer) shows through on the right. -->
+          <div class="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide text-[#171717]" style="background:#f5b400">
+            Compressed · {ex.compressedSize}
+          </div>
+          <div class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide text-white" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(6px)">
+            Original · {ex.originalSize}
+          </div>
+        </div>
+      ))}
+
+      <!-- Draggable divider -->
+      <div class="slider-handle absolute top-0 bottom-0 flex items-center justify-center" style="left:50%;transform:translateX(-50%)">
+        <div class="absolute top-0 bottom-0 w-[2px] bg-white/90" style="box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div>
+        <button
+          type="button"
+          id="showcase-handle"
+          aria-label="Drag to compare original and compressed image"
+          class="relative w-11 h-11 rounded-full bg-white flex items-center justify-center cursor-ew-resize active:scale-95 transition-transform"
+          style="box-shadow:0 2px 12px rgba(0,0,0,0.25)"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#171717" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- First-interaction hint -->
+      <div id="showcase-hint" class="absolute bottom-4 left-1/2 -translate-x-1/2 px-3.5 py-2 rounded-full text-[12px] font-medium text-white flex items-center gap-2 transition-opacity duration-300" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 7 3 12l5 5M16 7l5 5-5 5"/></svg>
+        Drag to compare
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex items-center justify-center gap-3 mt-7 flex-wrap">
+      <div id="showcase-stat-pct" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#fef3d7] border border-[#f5e0a3] text-[13px] font-bold text-[#b45309]">
+        −{examples[0].pct}% smaller
+      </div>
+      <div id="showcase-stat-format" class="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#f5f5f5] border border-[#ebebeb] text-[13px] font-semibold text-[#555]">
+        {examples[0].fromFormat} → {examples[0].toFormat}
+      </div>
+      <div class="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#f5f5f5] border border-[#ebebeb] text-[13px] font-semibold text-[#555]">
+        Visually identical
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script define:vars={{ examples }}>
+  const slider = document.getElementById('showcase-slider');
+  const handle = document.getElementById('showcase-handle');
+  const handleWrap = document.querySelector('.slider-handle');
+  const hint = document.getElementById('showcase-hint');
+  const statPct = document.getElementById('showcase-stat-pct');
+  const statFormat = document.getElementById('showcase-stat-format');
+  const tabs = document.querySelectorAll('[data-example-tab]');
+  const panels = document.querySelectorAll('[data-example-panel]');
+
+  let activeKey = examples[0].key;
+  let dragging = false;
+  let hintDismissed = false;
+
+  function setPosition(pct) {
+    const clamped = Math.max(2, Math.min(98, pct));
+    const panel = document.querySelector(`[data-example-panel="${activeKey}"]`);
+    const reveal = panel?.querySelector('.reveal-layer');
+    if (reveal) reveal.style.clipPath = `inset(0 ${100 - clamped}% 0 0)`;
+    if (handleWrap) handleWrap.style.left = `${clamped}%`;
+  }
+
+  function dismissHint() {
+    if (hintDismissed || !hint) return;
+    hintDismissed = true;
+    hint.style.opacity = '0';
+    setTimeout(() => hint.remove(), 300);
+  }
+
+  function pctFromClientX(clientX) {
+    const rect = slider.getBoundingClientRect();
+    return ((clientX - rect.left) / rect.width) * 100;
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    setPosition(pctFromClientX(clientX));
+  }
+
+  function onPointerUp() {
+    dragging = false;
+  }
+
+  handle?.addEventListener('mousedown', (e) => { e.preventDefault(); dragging = true; dismissHint(); });
+  handle?.addEventListener('touchstart', () => { dragging = true; dismissHint(); }, { passive: true });
+  slider?.addEventListener('mousedown', (e) => {
+    dragging = true;
+    dismissHint();
+    setPosition(pctFromClientX(e.clientX));
+  });
+  slider?.addEventListener('touchstart', (e) => {
+    dragging = true;
+    dismissHint();
+    setPosition(pctFromClientX(e.touches[0].clientX));
+  }, { passive: true });
+
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('touchmove', onPointerMove, { passive: true });
+  window.addEventListener('mouseup', onPointerUp);
+  window.addEventListener('touchend', onPointerUp);
+
+  handle?.addEventListener('keydown', (e) => {
+    const panel = document.querySelector(`[data-example-panel="${activeKey}"]`);
+    const reveal = panel?.querySelector('.reveal-layer');
+    const current = handleWrap ? parseFloat(handleWrap.style.left) : 50;
+    if (e.key === 'ArrowLeft') { setPosition(current - 5); dismissHint(); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { setPosition(current + 5); dismissHint(); e.preventDefault(); }
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const key = tab.getAttribute('data-example-tab');
+      if (!key || key === activeKey) return;
+      activeKey = key;
+
+      tabs.forEach((t) => {
+        const isActive = t === tab;
+        t.classList.toggle('bg-[#171717]', isActive);
+        t.classList.toggle('text-white', isActive);
+        t.classList.toggle('bg-[#f5f5f5]', !isActive);
+        t.classList.toggle('text-[#666]', !isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      panels.forEach((p) => {
+        p.style.display = p.getAttribute('data-example-panel') === key ? '' : 'none';
+      });
+
+      const ex = examples.find((e) => e.key === key);
+      if (ex && statPct) statPct.textContent = `−${ex.pct}% smaller`;
+      if (ex && statFormat) statFormat.textContent = `${ex.fromFormat} → ${ex.toFormat}`;
+
+      setPosition(50);
+    });
+  });
+
+  setPosition(50);
+</script>
