@@ -71,17 +71,20 @@ const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[
       <section>
         <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Quotas &amp; rate limits</h2>
         <p>
-          Each plan includes a monthly compression quota that resets at the start of your
-          billing period. Exceeding it returns <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">429 Too Many Requests</code>.
-          See current plan quotas and your usage on the <a href="/dashboard" class="text-[#b45309] hover:underline">dashboard</a>.
+          <strong class="text-[#171717]">Free</strong> includes 15 compressions per day, resetting at
+          midnight UTC, at up to 15 requests/min. <strong class="text-[#171717]">Starter</strong> and
+          <strong class="text-[#171717]"> Pro</strong> have no compression quota — unlimited compressions,
+          at up to 60 and 120 requests/min respectively. Exceeding a quota or rate limit returns
+          <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]"> 429 Too Many Requests</code>.
+          See your current plan and usage on the <a href="/dashboard" class="text-[#b45309] hover:underline">dashboard</a>.
         </p>
       </section>
 
       <section>
         <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Upload size limits</h2>
         <p>
-          Each plan also caps the size of a single image: <strong class="text-[#171717]">Free — 10 MB</strong>,
-          <strong class="text-[#171717]"> Starter — 50 MB</strong>, <strong class="text-[#171717]"> Pro — 200 MB</strong>.
+          Each plan also caps the size of a single image: <strong class="text-[#171717]">Free — 15 MB</strong>,
+          <strong class="text-[#171717]"> Starter — 33 MB</strong>, <strong class="text-[#171717]"> Pro — 200 MB</strong>.
           A file over your plan's limit returns <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">413 Payload Too Large</code>.
         </p>
       </section>
@@ -114,7 +117,7 @@ const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[
             </tr>
             <tr>
               <td class="py-2 pr-4 font-mono">429</td>
-              <td class="py-2">Monthly quota exceeded for your plan.</td>
+              <td class="py-2">Daily quota (Free plan) or rate limit exceeded.</td>
             </tr>
           </tbody>
         </table>
