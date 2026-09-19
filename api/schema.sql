@@ -22,12 +22,17 @@ CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   price_inr INTEGER NOT NULL,
-  monthly_quota INTEGER NOT NULL, -- -1 means unlimited
+  monthly_quota INTEGER NOT NULL, -- -1 means unlimited. Despite the column
+                                  -- name, this is "quota per quota_period" —
+                                  -- kept as-is rather than renamed to limit
+                                  -- the blast radius of an already-live column.
   razorpay_plan_id TEXT,
   rate_limit_per_min INTEGER NOT NULL DEFAULT 60,
-  max_upload_mb INTEGER NOT NULL DEFAULT 10
+  max_upload_mb INTEGER NOT NULL DEFAULT 10,
+  quota_period TEXT NOT NULL DEFAULT 'month' -- 'day' or 'month'; which usage_monthly.period granularity this plan's quota resets on
 );
 ALTER TABLE plans ADD COLUMN IF NOT EXISTS max_upload_mb INTEGER NOT NULL DEFAULT 10;
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS quota_period TEXT NOT NULL DEFAULT 'month';
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,6 +63,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_active_key_per_user
   ON api_keys(user_id) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS api_keys_key_hash_idx ON api_keys(key_hash);
 
+-- Despite the name, `period` isn't always a month: it's "YYYY-MM" for
+-- month-cadence plans and "YYYY-MM-DD" for day-cadence plans (see
+-- plans.quota_period) — the string just needs to change when the quota
+-- should reset, and requireApiKey.js picks the right format per plan.
 CREATE TABLE IF NOT EXISTS usage_monthly (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   period TEXT NOT NULL,

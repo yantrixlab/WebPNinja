@@ -1,8 +1,14 @@
 import { pool } from '../db.js';
 import { hashApiKey } from '../lib/apiKeys.js';
 
-function currentPeriod() {
+// 'day' plans (currently just Free, to bound abuse on a $0 tier) reset every
+// UTC day; everything else resets every UTC month. Same usage_monthly table
+// either way — just a different period string granularity.
+function currentPeriod(cadence) {
   const now = new Date();
+  if (cadence === 'day') {
+    return now.toISOString().slice(0, 10); // YYYY-MM-DD
+  }
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -24,7 +30,7 @@ export async function requireApiKey(req, res, next) {
 
   try {
     const { rows } = await pool.query(
-      `SELECT ak.id AS api_key_id, ak.user_id, p.id AS plan_id, p.monthly_quota, p.rate_limit_per_min, p.max_upload_mb
+      `SELECT ak.id AS api_key_id, ak.user_id, p.id AS plan_id, p.monthly_quota, p.quota_period, p.rate_limit_per_min, p.max_upload_mb
        FROM api_keys ak
        JOIN subscriptions s ON s.user_id = ak.user_id AND s.status = 'active'
        JOIN plans p ON p.id = s.plan_id
@@ -38,7 +44,7 @@ export async function requireApiKey(req, res, next) {
     }
 
     const isUnlimited = row.monthly_quota === -1;
-    const period = currentPeriod();
+    const period = currentPeriod(row.quota_period);
     const { rows: usageRows } = await pool.query(
       'SELECT count FROM usage_monthly WHERE user_id = $1 AND period = $2',
       [row.user_id, period]
@@ -46,7 +52,8 @@ export async function requireApiKey(req, res, next) {
     const used = usageRows[0]?.count ?? 0;
 
     if (!isUnlimited && used >= row.monthly_quota) {
-      return res.status(429).json({ error: 'Monthly quota exceeded', quota: row.monthly_quota, used });
+      const label = row.quota_period === 'day' ? 'Daily' : 'Monthly';
+      return res.status(429).json({ error: `${label} quota exceeded`, quota: row.monthly_quota, used });
     }
 
     req.apiUserId = row.user_id;
@@ -54,6 +61,7 @@ export async function requireApiKey(req, res, next) {
     req.plan = {
       id: row.plan_id,
       monthlyQuota: row.monthly_quota,
+      quotaPeriod: row.quota_period,
       rateLimitPerMin: row.rate_limit_per_min,
       maxUploadMb: row.max_upload_mb,
     };
@@ -69,8 +77,8 @@ export async function requireApiKey(req, res, next) {
   }
 }
 
-export async function incrementUsage(userId) {
-  const period = currentPeriod();
+export async function incrementUsage(userId, quotaPeriod) {
+  const period = currentPeriod(quotaPeriod);
   await pool.query(
     `INSERT INTO usage_monthly (user_id, period, count) VALUES ($1, $2, 1)
      ON CONFLICT (user_id, period) DO UPDATE SET count = usage_monthly.count + 1`,

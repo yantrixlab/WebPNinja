@@ -46,7 +46,7 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
 
   try {
     const { buffer, mime, resizedFrom } = await compressImageIsolated(req.file.buffer, { format, quality });
-    await incrementUsage(req.apiUserId);
+    await incrementUsage(req.apiUserId, req.plan.quotaPeriod);
     res.setHeader('Content-Type', mime);
     if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);

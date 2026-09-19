@@ -83,7 +83,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       accentSoft: '#fef3d7',
       popular: true,
       icon: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
-      perks: ['Higher rate limits', 'Email support', 'One active API key'],
+      perks: ['Email support', 'One active API key'],
     },
     pro: {
       tag: 'For production',
@@ -91,12 +91,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
       accentSoft: '#fef3d7',
       popular: false,
       icon: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 9l3 9h14l3-9-6 3-4-7-4 7z"/></svg>',
-      perks: ['Highest rate limits', 'Priority email support', 'One active API key'],
+      perks: ['Email support', 'One active API key'],
     },
   };
 
   function formatQuota(quota) {
     return quota === -1 ? 'Unlimited' : quota.toLocaleString();
+  }
+
+  function formatQuotaLine(quota, quotaPeriod) {
+    if (quota === -1) return 'Unlimited compressions';
+    const period = quotaPeriod === 'day' ? 'day' : 'month';
+    return `<strong class="text-[#171717]">${formatQuota(quota)}</strong>&nbsp;compressions / ${period}`;
   }
 
   async function detectCountry() {
@@ -184,13 +190,17 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
         <ul class="flex flex-col gap-2.5 text-[14px] text-[#4d4d4d] flex-1">
           <li class="flex items-center gap-2">
             <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            <strong class="text-[#171717]">${formatQuota(plan.monthly_quota)}</strong>&nbsp;compressions / month
+            ${formatQuotaLine(plan.monthly_quota, plan.quota_period)}
           </li>
           <li class="flex items-center gap-2">
             <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold" style="background:${meta.accentSoft}; color:${meta.accent}">
               Up to ${plan.max_upload_mb} MB per image
             </span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="${meta.accent}" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <strong class="text-[#171717]">${plan.rate_limit_per_min}</strong>&nbsp;requests/min rate limit
           </li>
           ${meta.perks.map(perk => `
             <li class="flex items-center gap-2">
