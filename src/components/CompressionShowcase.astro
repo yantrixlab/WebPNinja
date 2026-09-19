@@ -1,9 +1,16 @@
 ---
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 interface Manifest { name: string; origSize: number; compSize: number; pct: number }
 
-const manifestPath = new URL('../../public/showcase/manifest.json', import.meta.url);
+// NOT `new URL('../../public/...', import.meta.url)` — that resolves relative
+// to wherever the bundler places this component's compiled output, which is
+// stable in dev (points at the source file) but not once `astro build`
+// bundles it into a completely different location, where the equivalent path
+// doesn't exist. `process.cwd()` is the project root for both `astro dev`
+// and `astro build`, so it works the same in either.
+const manifestPath = join(process.cwd(), 'public/showcase/manifest.json');
 const manifest: Manifest[] = JSON.parse(readFileSync(manifestPath, 'utf-8'));
 const byName = Object.fromEntries(manifest.map((m) => [m.name, m]));
 
