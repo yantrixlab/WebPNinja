@@ -9,11 +9,16 @@ export const keysRouter = Router();
 // The raw key is returned in this response, and also stored encrypted (not
 // plaintext) so it can be decrypted and shown again later via /api/keys/reveal.
 keysRouter.post('/api/keys/generate', requireAuth, async (req, res) => {
-  const { raw, prefix } = generateApiKey();
-  const keyHash = hashApiKey(raw);
-  const encryptedKey = encryptApiKey(raw);
-
   try {
+    const { raw, prefix } = generateApiKey();
+    const keyHash = hashApiKey(raw);
+    // Was called before the try/catch — if API_KEY_ENCRYPTION_SECRET is
+    // missing or misconfigured, encryptApiKey() throws synchronously, and an
+    // uncaught throw in an async Express handler never reaches the client at
+    // all (the request just hangs until it times out) rather than failing
+    // cleanly with a 500.
+    const encryptedKey = encryptApiKey(raw);
+
     await pool.query('UPDATE api_keys SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [
       req.userId,
     ]);
@@ -41,7 +46,20 @@ keysRouter.get('/api/keys/reveal', requireAuth, async (req, res) => {
     if (!encryptedKey) {
       return res.status(404).json({ error: 'This key was created before full-key reveal was supported. Regenerate to get a revealable key.' });
     }
-    res.json({ apiKey: decryptApiKey(encryptedKey) });
+    try {
+      res.json({ apiKey: decryptApiKey(encryptedKey) });
+    } catch (decryptErr) {
+      // Decryption fails (auth tag mismatch) if API_KEY_ENCRYPTION_SECRET has
+      // changed since this key was generated — e.g. rotated, or a redeploy
+      // reset/regenerated the env var. There's no way to recover the
+      // plaintext without the original secret, so from the user's side this
+      // needs the exact same fix as a key that predates encrypted storage:
+      // regenerate it. Logging the real cause server-side since the
+      // user-facing message can't say "your server's encryption secret
+      // changed" without it looking like our bug, not an infra one.
+      console.error('[keys/reveal] decrypt failed — API_KEY_ENCRYPTION_SECRET likely changed since this key was generated:', decryptErr.message);
+      return res.status(404).json({ error: 'This key can no longer be revealed. Regenerate to get a revealable key.' });
+    }
   } catch (err) {
     console.error('[keys/reveal]', err.message);
     res.status(500).json({ error: 'Internal error revealing key' });
