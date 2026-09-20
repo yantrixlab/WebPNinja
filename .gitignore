@@ -37,3 +37,6 @@ __pycache__/
 .pytest_cache/
 sdks/python/dist/
 sdks/python/build/
+
+# Java SDK build artifacts
+sdks/java/target/

@@ -6,11 +6,11 @@ See [SPEC.md](SPEC.md) for the interface every language implements.
 
 | Language | Status | Package |
 |---|---|---|
+| Python | **Published** | [`webpninja`](https://pypi.org/project/webpninja/) |
 | Node.js | Built, tests passing — pending first publish | [`@webpninja/sdk`](node/) |
-| Python | Built, tests passing — pending first publish | [`webpninja`](python/) |
+| Java / Android | Built, tests passing — pending Maven Central namespace verification + first publish | [`com.webpninja:webpninja-sdk`](java/) |
 | Ruby | Not started | `webpninja` (RubyGems) |
 | PHP | Not started | `webpninja/webpninja` (Packagist) |
-| Java | Not started | `com.webpninja:webpninja-sdk` (Maven Central) |
 | .NET | Not started | `WebPNinja` (NuGet) |
 
 Each SDK is released independently via its own GitHub Actions workflow

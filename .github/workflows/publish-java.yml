@@ -1,0 +1,40 @@
+name: Publish Java/Android SDK
+
+# Triggered by pushing a tag like "java-v1.0.0". The tag push itself is the
+# release approval step — this workflow never runs on its own.
+#
+# Unlike npm/PyPI, this needs Maven Central's namespace verification for
+# com.webpninja (DNS TXT record on webpninja.com), a GPG signing key, and a
+# Sonatype Central Portal account/token — see sdks/java/README.md and the
+# repo secrets this workflow expects below.
+on:
+  push:
+    tags:
+      - "java-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdks/java
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - run: mvn -B test
+
+      - run: mvn -B deploy
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

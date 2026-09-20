@@ -110,42 +110,19 @@ file_put_contents("photo.webp", $result);`,
     install: `<dependency>
   <groupId>com.webpninja</groupId>
   <artifactId>webpninja-sdk</artifactId>
-  <version>RELEASE</version>
-</dependency>`,
-    comingSoon: true,
-    auth: `.header("Authorization", "Bearer webpninja_live_your_key")`,
-    compress: `String boundary = "WebPNinjaBoundary" + System.currentTimeMillis();
-byte[] fileBytes = Files.readAllBytes(Path.of("photo.png"));
+  <version>1.0.0</version>
+</dependency>
 
-var body = new StringBuilder();
-body.append("--").append(boundary).append("\\r\\n");
-body.append("Content-Disposition: form-data; name=\\"format\\"\\r\\n\\r\\nwebp\\r\\n");
-body.append("--").append(boundary).append("\\r\\n");
-body.append("Content-Disposition: form-data; name=\\"quality\\"\\r\\n\\r\\n75\\r\\n");
-body.append("--").append(boundary).append("\\r\\n");
-body.append("Content-Disposition: form-data; name=\\"file\\"; filename=\\"photo.png\\"\\r\\n");
-body.append("Content-Type: image/png\\r\\n\\r\\n");
+// or Gradle (works the same in an Android app module):
+implementation 'com.webpninja:webpninja-sdk:1.0.0'`,
+    sdkPublishing: true,
+    auth: `WebPNinja client = new WebPNinja("webpninja_live_your_key");
+// or: WebPNinja client = new WebPNinja(); // reads WEBPNINJA_API_KEY`,
+    compress: `import com.webpninja.sdk.WebPNinja;
 
-var out = new ByteArrayOutputStream();
-out.write(body.toString().getBytes());
-out.write(fileBytes);
-out.write(("\\r\\n--" + boundary + "--\\r\\n").getBytes());
+WebPNinja client = new WebPNinja("webpninja_live_your_key");
 
-HttpClient client = HttpClient.newHttpClient();
-HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("https://api.webpninja.com/api/v1/compress"))
-    .header("Authorization", "Bearer webpninja_live_your_key")
-    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-    .POST(HttpRequest.BodyPublishers.ofByteArray(out.toByteArray()))
-    .build();
-
-HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-if (response.statusCode() != 200) {
-    throw new RuntimeException(new String(response.body()));
-}
-
-Files.write(Path.of("photo.webp"), response.body());`,
+client.compressToFile(new File("photo.png"), new File("photo.webp"), "webp", 75);`,
   },
   {
     key: 'dotnet',
