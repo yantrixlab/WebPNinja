@@ -4,23 +4,217 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
 const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[10px] p-4 text-[13px] font-mono leading-[20px] overflow-x-auto";
+
+const languages = [
+  {
+    key: 'http',
+    label: 'HTTP',
+    auth: `Authorization: Bearer webpninja_live_<your_key>`,
+    compress: `curl -X POST https://api.webpninja.com/api/v1/compress \\
+  -H "Authorization: Bearer webpninja_live_your_key" \\
+  -F "file=@photo.png" \\
+  -F "format=webp" \\
+  -F "quality=75" \\
+  --output photo.webp`,
+  },
+  {
+    key: 'node',
+    label: 'Node.js',
+    comingSoon: true,
+    auth: `headers: { Authorization: "Bearer webpninja_live_your_key" }`,
+    compress: `import { readFile, writeFile } from "node:fs/promises";
+
+const fileBuffer = await readFile("photo.png");
+const form = new FormData();
+form.append("file", new Blob([fileBuffer]), "photo.png");
+form.append("format", "webp");
+form.append("quality", "75");
+
+const res = await fetch("https://api.webpninja.com/api/v1/compress", {
+  method: "POST",
+  headers: { Authorization: "Bearer webpninja_live_your_key" },
+  body: form,
+});
+
+if (!res.ok) {
+  throw new Error((await res.json()).error);
+}
+
+await writeFile("photo.webp", Buffer.from(await res.arrayBuffer()));`,
+  },
+  {
+    key: 'python',
+    label: 'Python',
+    comingSoon: true,
+    auth: `headers = {"Authorization": "Bearer webpninja_live_your_key"}`,
+    compress: `import requests
+
+with open("photo.png", "rb") as f:
+    res = requests.post(
+        "https://api.webpninja.com/api/v1/compress",
+        headers={"Authorization": "Bearer webpninja_live_your_key"},
+        files={"file": f},
+        data={"format": "webp", "quality": "75"},
+    )
+
+res.raise_for_status()
+
+with open("photo.webp", "wb") as out:
+    out.write(res.content)`,
+  },
+  {
+    key: 'ruby',
+    label: 'Ruby',
+    comingSoon: true,
+    auth: `request["Authorization"] = "Bearer webpninja_live_your_key"`,
+    compress: `require "net/http"
+require "uri"
+
+uri = URI("https://api.webpninja.com/api/v1/compress")
+request = Net::HTTP::Post.new(uri)
+request["Authorization"] = "Bearer webpninja_live_your_key"
+request.set_form(
+  [
+    ["file", File.open("photo.png"), { filename: "photo.png" }],
+    ["format", "webp"],
+    ["quality", "75"],
+  ],
+  "multipart/form-data"
+)
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+  http.request(request)
+end
+
+raise response.body unless response.is_a?(Net::HTTPSuccess)
+
+File.binwrite("photo.webp", response.body)`,
+  },
+  {
+    key: 'php',
+    label: 'PHP',
+    comingSoon: true,
+    auth: `"Authorization: Bearer webpninja_live_your_key"`,
+    compress: `<?php
+$ch = curl_init("https://api.webpninja.com/api/v1/compress");
+
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => ["Authorization: Bearer webpninja_live_your_key"],
+    CURLOPT_POSTFIELDS => [
+        "file" => new CURLFile("photo.png"),
+        "format" => "webp",
+        "quality" => "75",
+    ],
+]);
+
+$result = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+if ($status !== 200) {
+    throw new Exception($result);
+}
+
+file_put_contents("photo.webp", $result);`,
+  },
+  {
+    key: 'java',
+    label: 'Java',
+    comingSoon: true,
+    auth: `.header("Authorization", "Bearer webpninja_live_your_key")`,
+    compress: `String boundary = "WebPNinjaBoundary" + System.currentTimeMillis();
+byte[] fileBytes = Files.readAllBytes(Path.of("photo.png"));
+
+var body = new StringBuilder();
+body.append("--").append(boundary).append("\\r\\n");
+body.append("Content-Disposition: form-data; name=\\"format\\"\\r\\n\\r\\nwebp\\r\\n");
+body.append("--").append(boundary).append("\\r\\n");
+body.append("Content-Disposition: form-data; name=\\"quality\\"\\r\\n\\r\\n75\\r\\n");
+body.append("--").append(boundary).append("\\r\\n");
+body.append("Content-Disposition: form-data; name=\\"file\\"; filename=\\"photo.png\\"\\r\\n");
+body.append("Content-Type: image/png\\r\\n\\r\\n");
+
+var out = new ByteArrayOutputStream();
+out.write(body.toString().getBytes());
+out.write(fileBytes);
+out.write(("\\r\\n--" + boundary + "--\\r\\n").getBytes());
+
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.webpninja.com/api/v1/compress"))
+    .header("Authorization", "Bearer webpninja_live_your_key")
+    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+    .POST(HttpRequest.BodyPublishers.ofByteArray(out.toByteArray()))
+    .build();
+
+HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+if (response.statusCode() != 200) {
+    throw new RuntimeException(new String(response.body()));
+}
+
+Files.write(Path.of("photo.webp"), response.body());`,
+  },
+  {
+    key: 'dotnet',
+    label: '.NET',
+    comingSoon: true,
+    auth: `client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", "webpninja_live_your_key");`,
+    compress: `using var client = new HttpClient();
+client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", "webpninja_live_your_key");
+
+using var content = new MultipartFormDataContent();
+content.Add(new ByteArrayContent(await File.ReadAllBytesAsync("photo.png")), "file", "photo.png");
+content.Add(new StringContent("webp"), "format");
+content.Add(new StringContent("75"), "quality");
+
+var response = await client.PostAsync("https://api.webpninja.com/api/v1/compress", content);
+response.EnsureSuccessStatusCode();
+
+await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArrayAsync());`,
+  },
+];
 ---
 
 <Layout
   title="Developer API Docs — WebP Ninja"
-  description="REST API reference for the WebP Ninja Developer API: authentication, endpoints, quotas, and example requests."
+  description="REST API reference for the WebP Ninja Developer API: authentication, endpoints, quotas, and example requests in HTTP, Node.js, Python, Ruby, PHP, Java, and .NET."
 >
   <Nav />
   <main class="max-w-[760px] mx-auto px-6 py-24">
     <h1 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] mb-4">
       Developer API
     </h1>
-    <p class="text-[16px] leading-[26px] text-[#4d4d4d] mb-12 max-w-[560px]">
+    <p class="text-[16px] leading-[26px] text-[#4d4d4d] mb-8 max-w-[560px]">
       A REST API for server-side image compression — for automation, backends, and pipelines.
       This is a separate product from the free browser tool above: requests here are
       processed on our servers (in memory, never persisted to disk), gated by an API key
       tied to your plan. Get a key from the <a href="/dashboard" class="text-[#b45309] hover:underline">dashboard</a>.
     </p>
+
+    <div class="mb-12">
+      <p class="text-[12px] font-medium text-[#888888] mb-2">Select language</p>
+      <div id="lang-picker" class="flex flex-wrap gap-1.5">
+        {languages.map((lang, i) => (
+          <button
+            type="button"
+            data-lang-btn={lang.key}
+            class:list={[
+              'px-3.5 h-8 text-[13px] font-medium rounded-full border transition-colors',
+              i === 0
+                ? 'bg-[#171717] text-white border-[#171717]'
+                : 'bg-white text-[#4d4d4d] border-[#ebebeb] hover:bg-[#f5f5f5]',
+            ]}
+          >
+            {lang.label}
+          </button>
+        ))}
+      </div>
+    </div>
 
     <div class="flex flex-col gap-10 text-[15px] leading-[24px] text-[#4d4d4d]">
       <section>
@@ -28,7 +222,9 @@ const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[
         <p class="mb-3">
           Pass your API key as a bearer token on every request:
         </p>
-        <pre class={codeBlock}>Authorization: Bearer webpninja_live_&lt;your_key&gt;</pre>
+        {languages.map((lang, i) => (
+          <pre data-lang-panel={lang.key} class={codeBlock} hidden={i !== 0}>{lang.auth}</pre>
+        ))}
         <img
           src="/docs/postman-apikey.png"
           alt="Setting the Authorization header with a Bearer API key in Postman"
@@ -65,12 +261,16 @@ const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[
             </tr>
           </tbody>
         </table>
-        <pre class={codeBlock}>{`curl -X POST https://api.webpninja.com/api/v1/compress \\
-  -H "Authorization: Bearer webpninja_live_your_key" \\
-  -F "file=@photo.png" \\
-  -F "format=webp" \\
-  -F "quality=75" \\
-  --output photo.webp`}</pre>
+        {languages.map((lang, i) => (
+          <div data-lang-panel={lang.key} hidden={i !== 0}>
+            {lang.comingSoon && (
+              <p class="text-[13px] text-[#b45309] mb-2">
+                Official {lang.label} SDK — coming soon. Here's how to call the API directly today:
+              </p>
+            )}
+            <pre class={codeBlock}>{lang.compress}</pre>
+          </div>
+        ))}
         <img
           src="/docs/postman-body.png"
           alt="Setting the file, format, and quality form-data fields in Postman"
@@ -136,3 +336,28 @@ const codeBlock = "border border-[#ebebeb] bg-[#0d0d0d] text-[#e5e5e5] rounded-[
   </main>
   <Footer />
 </Layout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-lang-btn]');
+  const panels = document.querySelectorAll<HTMLElement>('[data-lang-panel]');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const selected = btn.dataset.langBtn;
+
+      buttons.forEach((b) => {
+        const active = b.dataset.langBtn === selected;
+        b.classList.toggle('bg-[#171717]', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('border-[#171717]', active);
+        b.classList.toggle('bg-white', !active);
+        b.classList.toggle('text-[#4d4d4d]', !active);
+        b.classList.toggle('border-[#ebebeb]', !active);
+      });
+
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.langPanel !== selected;
+      });
+    });
+  });
+</script>
