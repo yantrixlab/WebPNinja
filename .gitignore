@@ -30,3 +30,10 @@ api/.env
 
 # jetbrains setting folder
 .idea/
+
+# Python SDK build/test artifacts
+__pycache__/
+*.egg-info/
+.pytest_cache/
+sdks/python/dist/
+sdks/python/build/

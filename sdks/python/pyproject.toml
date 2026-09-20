@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "webpninja"
+version = "1.0.0"
+description = "Official Python client for the WebP Ninja image compression API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+dependencies = ["requests>=2.25"]
+authors = [{ name = "WebP Ninja" }]
+keywords = ["webp", "image-compression", "png", "jpeg", "avif"]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "responses>=0.23"]
+
+[project.urls]
+Homepage = "https://webpninja.com"
+Documentation = "https://webpninja.com/docs"
+Repository = "https://github.com/yantrixlab/WebPNinja"
+
+[tool.hatch.build.targets.wheel]
+packages = ["webpninja"]

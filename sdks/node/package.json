@@ -1,0 +1,39 @@
+{
+  "name": "@webpninja/sdk",
+  "version": "1.0.0",
+  "description": "Official Node.js client for the WebP Ninja image compression API",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "webp",
+    "image-compression",
+    "png",
+    "jpeg",
+    "avif",
+    "webpninja"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yantrixlab/WebPNinja.git",
+    "directory": "sdks/node"
+  },
+  "homepage": "https://webpninja.com/docs",
+  "publishConfig": {
+    "access": "public"
+  }
+}
