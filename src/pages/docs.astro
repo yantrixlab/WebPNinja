@@ -212,11 +212,13 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
         {languages.map((lang, i) => (
           <pre data-lang-panel={lang.key} class={codeBlock} hidden={i !== 0}>{lang.auth}</pre>
         ))}
-        <img
-          src="/docs/postman-apikey.png"
-          alt="Setting the Authorization header with a Bearer API key in Postman"
-          class="mt-4 w-full rounded-[10px] border border-[#ebebeb]"
-        />
+        <div data-lang-panel="http" hidden={false}>
+          <img
+            src="/docs/postman-apikey.png"
+            alt="Setting the Authorization header with a Bearer API key in Postman"
+            class="mt-4 w-full rounded-[10px] border border-[#ebebeb]"
+          />
+        </div>
       </section>
 
       <section>
@@ -226,28 +228,30 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
           — multipart form upload. Returns the compressed image bytes with the matching
           <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">Content-Type</code>.
         </p>
-        <table class="w-full text-[13px] mb-4 border-collapse">
-          <thead>
-            <tr class="border-b border-[#ebebeb] text-left">
-              <th class="py-2 pr-4 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Field</th>
-              <th class="py-2 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="border-b border-[#ebebeb]">
-              <td class="py-2 pr-4 font-mono">file</td>
-              <td class="py-2">The image to compress (multipart file field). Any format sharp can decode.</td>
-            </tr>
-            <tr class="border-b border-[#ebebeb]">
-              <td class="py-2 pr-4 font-mono">format</td>
-              <td class="py-2">Output format: <code class="font-mono">webp</code>, <code class="font-mono">jpeg</code>, <code class="font-mono">png</code>, or <code class="font-mono">avif</code>.</td>
-            </tr>
-            <tr>
-              <td class="py-2 pr-4 font-mono">quality</td>
-              <td class="py-2">10–100, default 80. Same compression settings as the browser tool at the same quality.</td>
-            </tr>
-          </tbody>
-        </table>
+        <div data-lang-panel="http" hidden={false}>
+          <table class="w-full text-[13px] mb-4 border-collapse">
+            <thead>
+              <tr class="border-b border-[#ebebeb] text-left">
+                <th class="py-2 pr-4 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Field</th>
+                <th class="py-2 font-mono text-[11px] uppercase tracking-wider text-[#888888]">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[#ebebeb]">
+                <td class="py-2 pr-4 font-mono">file</td>
+                <td class="py-2">The image to compress (multipart file field). Any format sharp can decode.</td>
+              </tr>
+              <tr class="border-b border-[#ebebeb]">
+                <td class="py-2 pr-4 font-mono">format</td>
+                <td class="py-2">Output format: <code class="font-mono">webp</code>, <code class="font-mono">jpeg</code>, <code class="font-mono">png</code>, or <code class="font-mono">avif</code>.</td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4 font-mono">quality</td>
+                <td class="py-2">10–100, default 80. Same compression settings as the browser tool at the same quality.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         {languages.map((lang, i) => (
           <div data-lang-panel={lang.key} hidden={i !== 0}>
             {lang.comingSoon && (
@@ -263,11 +267,13 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
             <pre class={codeBlock}>{lang.compress}</pre>
           </div>
         ))}
-        <img
-          src="/docs/postman-body.png"
-          alt="Setting the file, format, and quality form-data fields in Postman"
-          class="mt-4 w-full rounded-[10px] border border-[#ebebeb]"
-        />
+        <div data-lang-panel="http" hidden={false}>
+          <img
+            src="/docs/postman-body.png"
+            alt="Setting the file, format, and quality form-data fields in Postman"
+            class="mt-4 w-full rounded-[10px] border border-[#ebebeb]"
+          />
+        </div>
       </section>
 
       <section>
