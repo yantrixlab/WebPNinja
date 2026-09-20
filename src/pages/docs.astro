@@ -20,51 +20,36 @@ const languages = [
   {
     key: 'node',
     label: 'Node.js',
-    comingSoon: true,
-    auth: `headers: { Authorization: "Bearer webpninja_live_your_key" }`,
-    compress: `import { readFile, writeFile } from "node:fs/promises";
+    install: `npm install @webpninja/sdk`,
+    sdkPublishing: true,
+    auth: `const client = new WebPNinja("webpninja_live_your_key");
+// or: const client = new WebPNinja(); // reads WEBPNINJA_API_KEY`,
+    compress: `import { WebPNinja } from "@webpninja/sdk";
 
-const fileBuffer = await readFile("photo.png");
-const form = new FormData();
-form.append("file", new Blob([fileBuffer]), "photo.png");
-form.append("format", "webp");
-form.append("quality", "75");
+const client = new WebPNinja("webpninja_live_your_key");
 
-const res = await fetch("https://api.webpninja.com/api/v1/compress", {
-  method: "POST",
-  headers: { Authorization: "Bearer webpninja_live_your_key" },
-  body: form,
-});
-
-if (!res.ok) {
-  throw new Error((await res.json()).error);
-}
-
-await writeFile("photo.webp", Buffer.from(await res.arrayBuffer()));`,
+await client.compressToFile("photo.png", "photo.webp", {
+  format: "webp",
+  quality: 75,
+});`,
   },
   {
     key: 'python',
     label: 'Python',
-    comingSoon: true,
-    auth: `headers = {"Authorization": "Bearer webpninja_live_your_key"}`,
-    compress: `import requests
+    install: `pip install webpninja`,
+    sdkPublishing: true,
+    auth: `client = WebPNinja("webpninja_live_your_key")
+# or: client = WebPNinja()  # reads WEBPNINJA_API_KEY`,
+    compress: `from webpninja import WebPNinja
 
-with open("photo.png", "rb") as f:
-    res = requests.post(
-        "https://api.webpninja.com/api/v1/compress",
-        headers={"Authorization": "Bearer webpninja_live_your_key"},
-        files={"file": f},
-        data={"format": "webp", "quality": "75"},
-    )
+client = WebPNinja("webpninja_live_your_key")
 
-res.raise_for_status()
-
-with open("photo.webp", "wb") as out:
-    out.write(res.content)`,
+client.compress_to_file("photo.png", "photo.webp", format="webp", quality=75)`,
   },
   {
     key: 'ruby',
     label: 'Ruby',
+    install: `gem install webpninja`,
     comingSoon: true,
     auth: `request["Authorization"] = "Bearer webpninja_live_your_key"`,
     compress: `require "net/http"
@@ -93,6 +78,7 @@ File.binwrite("photo.webp", response.body)`,
   {
     key: 'php',
     label: 'PHP',
+    install: `composer require webpninja/webpninja`,
     comingSoon: true,
     auth: `"Authorization: Bearer webpninja_live_your_key"`,
     compress: `<?php
@@ -122,6 +108,11 @@ file_put_contents("photo.webp", $result);`,
   {
     key: 'java',
     label: 'Java',
+    install: `<dependency>
+  <groupId>com.webpninja</groupId>
+  <artifactId>webpninja-sdk</artifactId>
+  <version>RELEASE</version>
+</dependency>`,
     comingSoon: true,
     auth: `.header("Authorization", "Bearer webpninja_live_your_key")`,
     compress: `String boundary = "WebPNinjaBoundary" + System.currentTimeMillis();
@@ -160,6 +151,7 @@ Files.write(Path.of("photo.webp"), response.body());`,
   {
     key: 'dotnet',
     label: '.NET',
+    install: `dotnet add package WebPNinja`,
     comingSoon: true,
     auth: `client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", "webpninja_live_your_key");`,
@@ -218,6 +210,26 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
 
     <div class="flex flex-col gap-10 text-[15px] leading-[24px] text-[#4d4d4d]">
       <section>
+        <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Installation</h2>
+        {languages.map((lang, i) => (
+          <div data-lang-panel={lang.key} hidden={i !== 0}>
+            {lang.install ? (
+              <>
+                <pre class={codeBlock}>{lang.install}</pre>
+                {(lang.sdkPublishing || lang.comingSoon) && (
+                  <p class="text-[13px] text-[#b45309] mt-2">
+                    🚧 Publishing soon — not yet live on {lang.key === 'node' ? 'npm' : lang.key === 'python' ? 'PyPI' : lang.key === 'ruby' ? 'RubyGems' : lang.key === 'php' ? 'Packagist' : lang.key === 'java' ? 'Maven Central' : 'NuGet'}.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p>No installation needed — call the REST endpoint directly with any HTTP client.</p>
+            )}
+          </div>
+        ))}
+      </section>
+
+      <section>
         <h2 class="text-[20px] font-semibold text-[#171717] mb-3">Authentication</h2>
         <p class="mb-3">
           Pass your API key as a bearer token on every request:
@@ -266,6 +278,11 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
             {lang.comingSoon && (
               <p class="text-[13px] text-[#b45309] mb-2">
                 Official {lang.label} SDK — coming soon. Here's how to call the API directly today:
+              </p>
+            )}
+            {lang.sdkPublishing && (
+              <p class="text-[13px] text-[#b45309] mb-2">
+                This is the real {lang.label} SDK code — it'll work as soon as the package is published (see Installation above).
               </p>
             )}
             <pre class={codeBlock}>{lang.compress}</pre>
