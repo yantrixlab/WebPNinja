@@ -7,8 +7,8 @@ See [SPEC.md](SPEC.md) for the interface every language implements.
 | Language | Status | Package |
 |---|---|---|
 | Python | **Published** | [`webpninja`](https://pypi.org/project/webpninja/) |
+| Java / Android | **Published** | [`com.webpninja:webpninja-sdk`](https://repo1.maven.org/maven2/com/webpninja/webpninja-sdk/1.0.0/) |
 | Node.js | Built, tests passing — pending first publish | [`@webpninja/sdk`](node/) |
-| Java / Android | Built, tests passing — pending Maven Central namespace verification + first publish | [`com.webpninja:webpninja-sdk`](java/) |
 | Ruby | Not started | `webpninja` (RubyGems) |
 | PHP | Not started | `webpninja/webpninja` (Packagist) |
 | .NET | Not started | `WebPNinja` (NuGet) |
