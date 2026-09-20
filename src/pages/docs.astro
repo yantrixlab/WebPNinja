@@ -18,6 +18,37 @@ const languages = [
   --output photo.webp`,
   },
   {
+    key: 'java',
+    label: 'Java',
+    install: `<dependency>
+  <groupId>com.webpninja</groupId>
+  <artifactId>webpninja-sdk</artifactId>
+  <version>1.0.0</version>
+</dependency>
+
+// or Gradle (works the same in an Android app module):
+implementation 'com.webpninja:webpninja-sdk:1.0.0'`,
+    auth: `WebPNinja client = new WebPNinja("webpninja_live_your_key");
+// or: WebPNinja client = new WebPNinja(); // reads WEBPNINJA_API_KEY`,
+    compress: `import com.webpninja.sdk.WebPNinja;
+
+WebPNinja client = new WebPNinja("webpninja_live_your_key");
+
+client.compressToFile(new File("photo.png"), new File("photo.webp"), "webp", 75);`,
+  },
+  {
+    key: 'python',
+    label: 'Python',
+    install: `pip install webpninja`,
+    auth: `client = WebPNinja("webpninja_live_your_key")
+# or: client = WebPNinja()  # reads WEBPNINJA_API_KEY`,
+    compress: `from webpninja import WebPNinja
+
+client = WebPNinja("webpninja_live_your_key")
+
+client.compress_to_file("photo.png", "photo.webp", format="webp", quality=75)`,
+  },
+  {
     key: 'node',
     label: 'Node.js',
     install: `npm install @webpninja/sdk`,
@@ -32,18 +63,6 @@ await client.compressToFile("photo.png", "photo.webp", {
   format: "webp",
   quality: 75,
 });`,
-  },
-  {
-    key: 'python',
-    label: 'Python',
-    install: `pip install webpninja`,
-    auth: `client = WebPNinja("webpninja_live_your_key")
-# or: client = WebPNinja()  # reads WEBPNINJA_API_KEY`,
-    compress: `from webpninja import WebPNinja
-
-client = WebPNinja("webpninja_live_your_key")
-
-client.compress_to_file("photo.png", "photo.webp", format="webp", quality=75)`,
   },
   {
     key: 'ruby',
@@ -103,25 +122,6 @@ if ($status !== 200) {
 }
 
 file_put_contents("photo.webp", $result);`,
-  },
-  {
-    key: 'java',
-    label: 'Java',
-    install: `<dependency>
-  <groupId>com.webpninja</groupId>
-  <artifactId>webpninja-sdk</artifactId>
-  <version>1.0.0</version>
-</dependency>
-
-// or Gradle (works the same in an Android app module):
-implementation 'com.webpninja:webpninja-sdk:1.0.0'`,
-    auth: `WebPNinja client = new WebPNinja("webpninja_live_your_key");
-// or: WebPNinja client = new WebPNinja(); // reads WEBPNINJA_API_KEY`,
-    compress: `import com.webpninja.sdk.WebPNinja;
-
-WebPNinja client = new WebPNinja("webpninja_live_your_key");
-
-client.compressToFile(new File("photo.png"), new File("photo.webp"), "webp", 75);`,
   },
   {
     key: 'dotnet',
