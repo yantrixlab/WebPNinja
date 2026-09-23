@@ -1,11 +1,56 @@
 ---
+type OutputFormat = 'webp' | 'jpeg' | 'png' | 'avif';
+
+interface Props {
+  /** First line of the H1. Landing pages put their primary keyword here. */
+  headline?: string;
+  /** Second, gradient-highlighted line of the H1. */
+  highlight?: string;
+  /** Sub-copy under the H1 (HTML allowed for <strong>). */
+  sub?: string;
+  eyebrow?: string;
+  defaultFormat?: OutputFormat;
+  defaultQuality?: number;
+  /** Preselects "Target size" (in KB) — quality is then chosen automatically. */
+  targetKB?: number;
+  /** Homepage only: restore/save the visitor's last-picked format. Landing
+   *  pages must always start on their own format (a /webp-to-png visitor
+   *  expects PNG, whatever they picked last time). */
+  rememberFormat?: boolean;
+  /** Full-viewport hero (homepage) vs. a shorter one that leaves room for
+   *  the landing page's explanatory copy above the fold. */
+  fullHeight?: boolean;
+}
+
+const {
+  headline = 'Compress images.',
+  highlight = 'Keep quality.',
+  sub = 'Up to <strong class="text-[#111] font-semibold">80% smaller</strong> in seconds — PNG, JPEG, WebP, AVIF and more. Powered by MozJPEG & oxipng. Runs entirely in your browser.',
+  eyebrow = '100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever',
+  defaultFormat = 'webp',
+  defaultQuality = 20,
+  targetKB = 0,
+  rememberFormat = false,
+  fullHeight = true,
+} = Astro.props;
+
 const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
+
+// Presets cover the common government-form limits (SSC, UPSC, IBPS, state
+// PSCs, passport/visa portals); a page's own target is added if missing.
+const targetOptions = [...new Set([10, 20, 30, 50, 100, 200, 300, 500, 1024, ...(targetKB ? [targetKB] : [])])].sort((a, b) => a - b);
+const kbLabel = (kb: number) => (kb >= 1024 ? `${kb / 1024} MB` : `${kb} KB`);
+const formatLabel: Record<OutputFormat, string> = { webp: 'WebP', jpeg: 'JPG', png: 'PNG', avif: 'AVIF' };
+const toolConfig = { apiUrl, defaultFormat, defaultQuality, targetKB, rememberFormat };
 ---
 
 <!-- ══════════════ HERO + DROP ZONE ══════════════ -->
 <section
   id="compressor"
-  class="relative min-h-[calc(100vh-64px)] flex flex-col items-center justify-center overflow-hidden"
+  class:list={[
+    'relative flex flex-col items-center justify-center overflow-hidden',
+    fullHeight ? 'min-h-[calc(100vh-64px)]' : 'py-14 sm:py-20',
+  ]}
 >
   <!-- Mesh gradient backdrop -->
   <div class="absolute inset-0 mesh-gradient pointer-events-none" aria-hidden="true"></div>
@@ -30,26 +75,36 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
     <!-- Eyebrow pill -->
     <div class="mb-8 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#fef3d7]/90 backdrop-blur-sm border border-[#f5e0a3]" style="box-shadow:0 1px 8px rgba(0,0,0,0.06)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="#d69400"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
-      <span class="text-[12px] font-medium text-[#7a4a00] tracking-wide">100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever</span>
+      <span class="text-[12px] font-medium text-[#7a4a00] tracking-wide" set:html={eyebrow}></span>
     </div>
 
     <!-- Headline -->
     <h1
       id="hero-headline"
-      class="text-[64px] font-bold leading-[1.0] tracking-[-3.5px] text-[#111] mb-5 transition-all duration-500"
+      class:list={[
+        'font-bold leading-[1.0] text-[#111] mb-5 transition-all duration-500',
+        fullHeight ? 'text-[44px] sm:text-[64px] tracking-[-2.5px] sm:tracking-[-3.5px]' : 'text-[38px] sm:text-[54px] tracking-[-2px] sm:tracking-[-3px]',
+      ]}
     >
-      Compress images.<br />
-      <span class="hero-gradient-text">Keep quality.</span>
+      {headline}<br />
+      <span class="hero-gradient-text">{highlight}</span>
     </h1>
 
     <!-- Sub-copy -->
     <p
       id="hero-sub"
-      class="text-[17px] leading-[28px] text-[#666] max-w-[500px] mb-10 transition-all duration-500"
-    >
-      Up to <strong class="text-[#111] font-semibold">80% smaller</strong> in seconds — PNG, JPEG, WebP, AVIF and more.
-      Powered by MozJPEG & oxipng. Runs entirely in your browser.
-    </p>
+      class:list={['text-[17px] leading-[28px] text-[#666] max-w-[520px] transition-all duration-500', targetKB ? 'mb-6' : 'mb-10']}
+      set:html={sub}
+    />
+
+    {targetKB > 0 && (
+      <!-- Tells the visitor what they'll get before they pick a file; the
+           controls bar (after upload) lets them change it. -->
+      <p id="target-hint" class="mb-6 px-3.5 py-1.5 rounded-[14px] bg-white border border-[#ebebeb] text-[13px] leading-[20px] text-[#4d4d4d]" style="box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+        <svg class="inline-block align-[-2px] mr-1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d69400" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+        Output: <strong class="text-[#171717]">{formatLabel[defaultFormat]} under {kbLabel(targetKB)}</strong> — change it after upload
+      </p>
+    )}
 
     <!-- Drop Zone -->
     <div
@@ -143,10 +198,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
 
   <!-- Controls bar -->
   <div class="sticky top-[64px] z-40 border-b border-[#ebebeb]" style="background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
-    <div class="max-w-[1400px] mx-auto px-6 h-14 flex items-center gap-2">
+    <div class="max-w-[1400px] mx-auto px-6 min-h-14 py-2.5 flex flex-wrap items-center gap-2">
 
-      <!-- Quality pill -->
-      <div class="flex items-center gap-2.5 h-9 px-3.5 rounded-[10px] bg-[#f5f5f5] border border-[#ebebeb]">
+      <!-- Quality pill (disabled while a target size is set) -->
+      <div id="quality-pill" class:list={['flex items-center gap-2.5 h-9 px-3.5 rounded-[10px] bg-[#f5f5f5] border border-[#ebebeb] transition-opacity', targetKB && 'opacity-40']} title={targetKB ? 'Quality is picked automatically to hit the target size' : undefined}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 22 12a10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2"/></svg>
         <label for="quality" class="text-[11px] font-semibold text-[#888] uppercase tracking-[0.06em] whitespace-nowrap select-none">Quality</label>
         <div class="w-px h-3.5 bg-[#e0e0e0]"></div>
@@ -155,12 +210,33 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
           id="quality"
           min="10"
           max="100"
-          value="20"
-          class="w-24 h-1 cursor-pointer"
+          value={defaultQuality}
+          disabled={targetKB > 0}
+          class="w-24 h-1 cursor-pointer disabled:cursor-not-allowed"
           style="accent-color:#171717"
           aria-label="Compression quality"
         />
-        <span id="quality-value" class="text-[13px] font-bold text-[#171717] w-9 tabular-nums text-right">20%</span>
+        <span id="quality-value" class="text-[13px] font-bold text-[#171717] w-9 tabular-nums text-right">{targetKB ? 'Auto' : `${defaultQuality}%`}</span>
+      </div>
+
+      <!-- Target size pill -->
+      <div class="flex items-center gap-2 h-9 px-3.5 rounded-[10px] bg-[#f5f5f5] border border-[#ebebeb]">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+        <label for="target-size" class="text-[11px] font-semibold text-[#888] uppercase tracking-[0.06em] whitespace-nowrap select-none">Max size</label>
+        <div class="w-px h-3.5 bg-[#e0e0e0]"></div>
+        <div class="relative flex items-center">
+          <select
+            id="target-size"
+            class="h-7 pl-1 pr-6 text-[13px] font-bold text-[#171717] bg-transparent border-none cursor-pointer appearance-none focus:outline-none"
+            aria-label="Maximum output file size"
+          >
+            <option value="0" selected={!targetKB}>Off</option>
+            {targetOptions.map((kb) => (
+              <option value={kb} selected={kb === targetKB}>{kbLabel(kb)}</option>
+            ))}
+          </select>
+          <svg class="pointer-events-none absolute right-0" width="10" height="6" viewBox="0 0 10 6" fill="#888"><path d="M0 0l5 6 5-6z"/></svg>
+        </div>
       </div>
 
       <!-- Format pill -->
@@ -174,10 +250,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
             class="h-7 pl-1 pr-6 text-[13px] font-bold text-[#171717] bg-transparent border-none cursor-pointer appearance-none focus:outline-none"
             aria-label="Output format"
           >
-            <option value="webp" selected>WebP</option>
-            <option value="jpeg">JPEG</option>
-            <option value="png">PNG</option>
-            <option value="avif">AVIF</option>
+            <option value="webp" selected={defaultFormat === 'webp'}>WebP</option>
+            <option value="jpeg" selected={defaultFormat === 'jpeg'}>JPEG</option>
+            <option value="png" selected={defaultFormat === 'png'}>PNG</option>
+            <option value="avif" selected={defaultFormat === 'avif'}>AVIF</option>
           </select>
           <svg class="pointer-events-none absolute right-0" width="10" height="6" viewBox="0 0 10 6" fill="#888"><path d="M0 0l5 6 5-6z"/></svg>
         </div>
@@ -274,8 +350,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
   </div>
 </div>
 
-<script define:vars={{ apiUrl }}>
-  window.__WEBPNINJA_API_URL__ = apiUrl;
+<script define:vars={{ toolConfig }}>
+  window.__WEBPNINJA_TOOL__ = toolConfig;
 </script>
 
 <!-- ══════════════ CLIENT-SIDE COMPRESSOR SCRIPT ══════════════ -->
@@ -312,18 +388,38 @@ interface FileItem {
    *  dimension limit (e.g. WebP/AVIF) — the original size as "WxH", for
    *  a note on the result card; null otherwise. */
   resizedFrom: string | null;
+  /** Outcome of a target-size run (null in normal quality mode). */
+  target: TargetInfo | null;
 }
+
+interface TargetInfo {
+  targetKB: number;
+  width: number;
+  height: number;
+  quality: number;
+  hitTarget: boolean;
+}
+
+// Set by the sibling define:vars script tag above, from the component's props.
+const TOOL = (window as any).__WEBPNINJA_TOOL__ as {
+  apiUrl: string;
+  defaultFormat: string;
+  defaultQuality: number;
+  targetKB: number;
+  rememberFormat: boolean;
+};
 
 /* ── State ── */
 const store = new Map<string, FileItem>();
-let quality = 20;
+let quality = TOOL.defaultQuality;
 const SUPPORTED_OUTPUT_FORMATS = ['webp', 'jpeg', 'png', 'avif'];
-let outputFormat = 'webp';
+let outputFormat = TOOL.defaultFormat;
+/** 0 = off; otherwise the maximum output size in KB. */
+let targetKB = TOOL.targetKB;
 let isDragActive = false;
 let recompressTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Set by the sibling define:vars script tag above.
-const API_URL: string = (window as any).__WEBPNINJA_API_URL__ || '';
+const API_URL: string = TOOL.apiUrl || '';
 
 /* ── DOM refs ── */
 const dropzone        = document.getElementById('dropzone')!;
@@ -342,6 +438,8 @@ const fileGrid        = document.getElementById('file-grid')!;
 const qualitySlider   = document.getElementById('quality') as HTMLInputElement;
 const qualityDisplay  = document.getElementById('quality-value')!;
 const formatSelect    = document.getElementById('format') as HTMLSelectElement;
+const targetSelect    = document.getElementById('target-size') as HTMLSelectElement;
+const qualityPill     = document.getElementById('quality-pill')!;
 const downloadAllBtn  = document.getElementById('download-all') as HTMLButtonElement;
 const statsEl         = document.getElementById('stats')!;
 const fileCountEl     = document.getElementById('file-count')!;
@@ -503,6 +601,7 @@ async function addFiles(fileList: FileList) {
       fallbackDeclined: false,
       viaServer: false,
       resizedFrom: null,
+      target: null,
     };
     store.set(id, item);
     appendCard(id, file, thumbUrl);
@@ -531,14 +630,16 @@ async function compressFile(id: string) {
   const myGen = ++item.genId;
   const myQuality = quality;
   const myFormat = outputFormat;
+  const myTargetKB = targetKB;
 
   item.status = 'compressing';
   setCardLoading(id, true);
 
   // Once the user has agreed to server-side fallback for this file, skip
   // straight to it on future recompresses (quality/format changes) instead
-  // of re-failing in the browser and re-prompting every time.
-  if (item.fallbackConsented) {
+  // of re-failing in the browser and re-prompting every time. The server has
+  // no target-size mode, so a target-size run always tries the browser.
+  if (item.fallbackConsented && !myTargetKB) {
     return compressFileOnServer(id, myGen, myQuality, myFormat);
   }
 
@@ -557,7 +658,7 @@ async function compressFile(id: string) {
     // much weaker, lossless-only fallback (see compressWorker.ts) — offer
     // the server's real quantization instead of silently under-compressing.
     if (
-      myFormat === 'png' && !item.fallbackDeclined && API_URL &&
+      myFormat === 'png' && !myTargetKB && !item.fallbackDeclined && API_URL &&
       dims && dims.width * dims.height > PNG_QUANTIZE_MAX_PIXELS
     ) {
       setCardPhase(id, 'Waiting for confirmation…');
@@ -572,7 +673,9 @@ async function compressFile(id: string) {
       item.fallbackDeclined = true;
     }
 
-    const blob = await compressInWorker(item.file, myQuality, mime, (label) => {
+    // Upload portals disagree on whether "20 KB" means 20,000 or 20,480 bytes,
+    // so aim for the stricter reading — the result then passes either check.
+    const { blob, target } = await compressInWorker(item.file, myQuality, mime, myTargetKB * 1000, (label) => {
       if (item.genId === myGen) setCardPhase(id, label);
     });
 
@@ -586,7 +689,8 @@ async function compressFile(id: string) {
     item.status = 'done';
     item.viaServer = false;
     item.resizedFrom = null;
-    item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
+    item.target = target ? { targetKB: myTargetKB, ...target } : null;
+    item.savedPct = Math.max(0, Math.floor((1 - blob.size / item.originalSize) * 100));
 
     setCardDone(id, blob, item.savedPct);
     updateStats();
@@ -595,7 +699,7 @@ async function compressFile(id: string) {
     if (item.genId !== myGen) return;
     console.error('[compress]', err);
 
-    if (!item.fallbackDeclined && API_URL) {
+    if (!myTargetKB && !item.fallbackDeclined && API_URL) {
       setCardPhase(id, 'Waiting for confirmation…');
       const proceed = await confirmServerFallback(
         (err as Error)?.message || 'This image could not be processed in your browser.'
@@ -716,7 +820,8 @@ async function compressFileOnServer(id: string, myGen: number, q: number, fmt: s
     item.status = 'done';
     item.viaServer = true;
     item.resizedFrom = resizedFrom;
-    item.savedPct = Math.max(0, Math.round((1 - blob.size / item.originalSize) * 100));
+    item.target = null;
+    item.savedPct = Math.max(0, Math.floor((1 - blob.size / item.originalSize) * 100));
 
     setCardDone(id, blob, item.savedPct);
     updateStats();
@@ -865,8 +970,14 @@ async function peekImageDimensions(file: File): Promise<{ width: number; height:
 // for their entire duration.
 const compressWorker = new Worker(new URL('../lib/compressWorker.ts', import.meta.url), { type: 'module' });
 
+interface WorkerResult {
+  blob: Blob;
+  /** Present only for target-size runs. */
+  target?: Omit<TargetInfo, 'targetKB'>;
+}
+
 interface WorkerRequest {
-  resolve: (blob: Blob) => void;
+  resolve: (result: WorkerResult) => void;
   reject: (err: Error) => void;
   onPhase: (label: string) => void;
 }
@@ -881,18 +992,20 @@ compressWorker.onmessage = (e: MessageEvent) => {
     pending.onPhase(e.data.label);
   } else if (type === 'done') {
     workerRequests.delete(reqId);
-    pending.resolve(e.data.blob);
+    pending.resolve({ blob: e.data.blob, target: e.data.target });
   } else if (type === 'error') {
     workerRequests.delete(reqId);
     pending.reject(new Error(e.data.message));
   }
 };
 
-function compressInWorker(file: File, quality: number, mime: string, onPhase: (label: string) => void): Promise<Blob> {
+/** `targetBytes` > 0 switches the worker to target-size mode, where it picks
+ *  the quality (and, if needed, the dimensions) itself. */
+function compressInWorker(file: File, quality: number, mime: string, targetBytes: number, onPhase: (label: string) => void): Promise<WorkerResult> {
   return new Promise((resolve, reject) => {
     const reqId = crypto.randomUUID();
     workerRequests.set(reqId, { resolve, reject, onPhase });
-    compressWorker.postMessage({ type: 'compress', reqId, file, quality, mime });
+    compressWorker.postMessage({ type: 'compress', reqId, file, quality, mime, targetBytes: targetBytes || undefined });
   });
 }
 
@@ -907,7 +1020,7 @@ function appendCard(id: string, file: File, thumbUrl: string | null) {
   // <img> at it would force the browser's own decoder to fully decode it
   // just to paint a thumbnail, which is exactly what crashed the tab.
   const thumbMarkup = thumbUrl
-    ? `<img src="${thumbUrl}" alt="${escHtml(file.name)}" class="w-full h-full object-contain p-4" onload="URL.revokeObjectURL(this.src)" />`
+    ? `<img src="${thumbUrl}" alt="${escHtml(file.name)}" class="w-full h-full object-contain p-4" onload="window.URL.revokeObjectURL(this.src)" />`
     : `<div class="w-full h-full flex flex-col items-center justify-center gap-2 text-[#ccc]">
          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
          <span class="text-[10px] font-mono uppercase tracking-wide">Preview unavailable — image too large</span>
@@ -1046,6 +1159,7 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
       </div>
       ${item.viaServer ? `<div class="mt-1 text-[10px] font-semibold text-[#b45309] uppercase tracking-wide">Compressed on server</div>` : ''}
       ${item.resizedFrom ? `<div class="mt-0.5 text-[10px] text-[#999]">Resized from ${escHtml(item.resizedFrom.replace('x', '×'))}px — too large for ${mimeToExt(item.outputMime).toUpperCase()}'s max resolution</div>` : ''}
+      ${item.target ? targetNote(item.target, blob.size) : ''}
     `;
   }
 
@@ -1080,6 +1194,15 @@ function setCardDone(id: string, blob: Blob, savedPct: number) {
   }
 
   enableDownloadAll();
+}
+
+/** Result line for a target-size run: whether it fits, plus the final pixel
+ *  dimensions — government forms often check those too. */
+function targetNote(t: TargetInfo, size: number): string {
+  const dims = `${t.width}×${t.height}px`;
+  return t.hitTarget
+    ? `<div class="mt-1 text-[11px] font-semibold text-[#15803d]">✓ Under ${kbLabel(t.targetKB)} <span class="font-normal text-[#999]">· ${dims} · quality ${t.quality}</span></div>`
+    : `<div class="mt-1 text-[11px] font-semibold text-[#b45309]">Couldn't get under ${kbLabel(t.targetKB)} — smallest possible is ${formatBytes(size)} <span class="font-normal text-[#999]">· ${dims}</span></div>`;
 }
 
 function setCardError(id: string, reason?: string) {
@@ -1127,7 +1250,8 @@ function updateStats() {
 
   if (doneCount > 0) {
     const saved = totalOrig - totalComp;
-    const pct = Math.round((saved / totalOrig) * 100);
+    // Floor, not round: 10 MB → 19 KB is 99.8%, and "100% smaller" reads as broken.
+    const pct = Math.floor((saved / totalOrig) * 100);
     totalSavedEl.textContent = `Saved ${formatBytes(saved)} (${pct}% smaller)`;
     statsEl.classList.remove('hidden');
     statsEl.classList.add('flex');
@@ -1204,26 +1328,41 @@ qualitySlider.addEventListener('input', () => {
 // different format we treat that as their preference and remember it for
 // next time — restored below, before anything else reads outputFormat.
 const FORMAT_PREF_KEY = 'webpninja_preferred_format';
-try {
-  const savedFormat = localStorage.getItem(FORMAT_PREF_KEY);
-  if (savedFormat && SUPPORTED_OUTPUT_FORMATS.includes(savedFormat)) {
-    outputFormat = savedFormat;
-    formatSelect.value = savedFormat;
-  }
-} catch { /* localStorage unavailable (private mode, etc.) — WebP default stands */ }
+if (TOOL.rememberFormat) {
+  try {
+    const savedFormat = localStorage.getItem(FORMAT_PREF_KEY);
+    if (savedFormat && SUPPORTED_OUTPUT_FORMATS.includes(savedFormat)) {
+      outputFormat = savedFormat;
+      formatSelect.value = savedFormat;
+    }
+  } catch { /* localStorage unavailable (private mode, etc.) — WebP default stands */ }
+}
 
 formatSelect.addEventListener('change', () => {
   outputFormat = formatSelect.value;
-  try { localStorage.setItem(FORMAT_PREF_KEY, outputFormat); } catch { /* ignore */ }
+  if (TOOL.rememberFormat) {
+    try { localStorage.setItem(FORMAT_PREF_KEY, outputFormat); } catch { /* ignore */ }
+  }
 
   // WebP compresses far more aggressively than other formats at the same
   // quality value, so default to a much lower quality when switching to it.
   if (outputFormat === 'webp') {
     quality = 20;
     qualitySlider.value = String(quality);
-    qualityDisplay.textContent = `${quality}%`;
+    if (!targetKB) qualityDisplay.textContent = `${quality}%`;
   }
 
+  scheduleRecompress();
+});
+
+targetSelect.addEventListener('change', () => {
+  targetKB = Number(targetSelect.value) || 0;
+  // Quality is chosen per-image while a target is set, so the slider would
+  // only mislead — grey it out rather than hide it so the layout stays put.
+  qualitySlider.disabled = targetKB > 0;
+  qualityPill.classList.toggle('opacity-40', targetKB > 0);
+  qualityPill.title = targetKB ? 'Quality is picked automatically to hit the target size' : '';
+  qualityDisplay.textContent = targetKB ? 'Auto' : `${quality}%`;
   scheduleRecompress();
 });
 
@@ -1241,7 +1380,7 @@ async function recompressAll() {
     // that's the multi-minute-or-timeout upload all over again, silently,
     // for every quality/format tweak. Require an explicit click instead of
     // firing that off automatically.
-    if (item.fallbackConsented) {
+    if (item.fallbackConsented && !targetKB) {
       markNeedsReupload(id);
       continue;
     }
@@ -1306,7 +1445,7 @@ clearBtn.addEventListener('click', () => {
 function transitionToCompact() {
   // Hide entire hero, show only results
   heroContent.classList.add('!hidden');
-  document.getElementById('compressor')!.classList.add('!min-h-0');
+  document.getElementById('compressor')!.classList.add('!min-h-0', '!py-0');
   resultsSection.classList.remove('hidden');
 
   // Show add-more / clear in the controls bar
@@ -1319,7 +1458,7 @@ function transitionToCompact() {
 
 function transitionToFull() {
   heroContent.classList.remove('!hidden');
-  document.getElementById('compressor')!.classList.remove('!min-h-0');
+  document.getElementById('compressor')!.classList.remove('!min-h-0', '!py-0');
 
   barActions.classList.add('hidden');
   barActions.classList.remove('flex');
@@ -1332,6 +1471,10 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function kbLabel(kb: number): string {
+  return kb >= 1024 ? `${kb / 1024} MB` : `${kb} KB`;
 }
 
 function mimeToExt(mime: string): string {

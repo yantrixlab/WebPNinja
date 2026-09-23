@@ -34,7 +34,10 @@ let _avifEncode: ((d: ImageData, o?: any) => Promise<ArrayBuffer>) | null = null
 let _pngEncode:  ((d: ImageData) => Promise<ArrayBuffer>) | null = null;
 let _oxipng:     ((d: ArrayBuffer, o?: any) => Promise<ArrayBuffer>) | null = null;
 
-async function decodeToImageData(file: File): Promise<ImageData> {
+/** `flattenWhite` composites onto white first — for JPEG output, which has no
+ *  alpha: the encoder would otherwise read transparent pixels' (usually
+ *  black) RGB values and turn a transparent background black. */
+async function decodeToImageData(file: File, flattenWhite = false): Promise<ImageData> {
   const bitmap = await createImageBitmap(file);
   const { width, height } = bitmap;
 
@@ -49,6 +52,7 @@ async function decodeToImageData(file: File): Promise<ImageData> {
 
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d')!;
+  if (flattenWhite) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
   ctx.drawImage(bitmap, 0, 0);
   bitmap.close();
   return ctx.getImageData(0, 0, width, height);
@@ -88,7 +92,7 @@ async function canvasFallback(file: File, q: number, mime: string): Promise<Blob
 
 async function compress(file: File, q: number, mime: string, onPhase: (label: string) => void): Promise<Blob> {
   onPhase('Decoding…');
-  const imageData = await decodeToImageData(file);
+  const imageData = await decodeToImageData(file, mime === 'image/jpeg');
   let buffer: ArrayBuffer;
 
   try {
@@ -151,22 +155,184 @@ async function compress(file: File, q: number, mime: string, onPhase: (label: st
   return new Blob([buffer], { type: mime });
 }
 
+/* ══════════════ TARGET FILE SIZE ══════════════ */
+
+/** Lossy-encodes already-decoded pixels for the target-size search. Uses
+ *  slightly faster encoder presets than compress() above, since the search
+ *  runs the encoder several times per image. */
+async function encodeImageData(imageData: ImageData, q: number, mime: string): Promise<Blob> {
+  let buffer: ArrayBuffer;
+  switch (mime) {
+    case 'image/jpeg': {
+      if (!_jpegEncode) _jpegEncode = (await import('@jsquash/jpeg/encode')).default;
+      buffer = await _jpegEncode(imageData, { quality: q });
+      break;
+    }
+    case 'image/webp': {
+      if (!_webpEncode) _webpEncode = (await import('@jsquash/webp/encode')).default;
+      buffer = await _webpEncode(imageData, { quality: q, method: 4, sns_strength: 90, filter_strength: 60 });
+      break;
+    }
+    case 'image/avif': {
+      if (!_avifEncode) _avifEncode = (await import('@jsquash/avif/encode')).default;
+      buffer = await _avifEncode(imageData, { quality: q, speed: 8 });
+      break;
+    }
+    case 'image/png': {
+      if (!_pngEncode) _pngEncode = (await import('@jsquash/png/encode')).default;
+      if (!_oxipng)    _oxipng    = (await import('@jsquash/oxipng/optimise')).default;
+      const quantized = await quantizeImageData(imageData, q);
+      buffer = await _oxipng(await _pngEncode(quantized), { level: 2 });
+      break;
+    }
+    default:
+      throw new Error(`Unsupported output format: ${mime}`);
+  }
+  return new Blob([buffer], { type: mime });
+}
+
+/** Draws the bitmap at the given size, downscaling in successive halvings
+ *  first — one large-ratio drawImage (e.g. 4000px → 300px) skips most source
+ *  pixels and aliases badly, which ruins thin signature strokes. JPEG has no
+ *  alpha, so transparent areas (common in signature PNGs) are flattened onto
+ *  white instead of turning black. */
+function drawScaled(bitmap: ImageBitmap, width: number, height: number, flattenWhite: boolean): ImageData {
+  let source: ImageBitmap | OffscreenCanvas = bitmap;
+  let sw = bitmap.width, sh = bitmap.height;
+  while (sw / 2 >= width && sh / 2 >= height) {
+    const step = new OffscreenCanvas(Math.round(sw / 2), Math.round(sh / 2));
+    const sctx = step.getContext('2d')!;
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(source, 0, 0, step.width, step.height);
+    source = step; sw = step.width; sh = step.height;
+  }
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext('2d')!;
+  if (flattenWhite) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source, 0, 0, width, height);
+  return ctx.getImageData(0, 0, width, height);
+}
+
+interface TargetResult {
+  blob: Blob;
+  width: number;
+  height: number;
+  quality: number;
+  /** False when even the smallest attempt couldn't get under the target —
+   *  the blob is then the smallest result found. */
+  hitTarget: boolean;
+}
+
+const TARGET_MIN_Q = 10;
+const TARGET_MAX_Q = 92;
+// Below this, JPEG blocking gets visible (faces go smeary). A slightly
+// smaller image at a decent quality looks clearly better than a larger one
+// full of artifacts, so a fit below this triggers a few shrink-and-retry
+// rounds before it's accepted.
+const TARGET_GOOD_Q = 50;
+const TARGET_MAX_QUALITY_SHRINKS = 3;
+// Past this the image stops being useful for anything, so stop shrinking
+// and report the target as unreachable instead.
+const TARGET_MIN_SIDE = 48;
+
+/**
+ * Finds a good encode that fits under `targetBytes`: binary search for the
+ * highest quality that fits at the current size. When even the lowest
+ * quality is too big, downscale (by the square root of the size ratio, since
+ * bytes scale roughly with pixel count) and search again; when it fits only
+ * at a poor quality, shrink a little to buy quality back.
+ */
+async function compressToTarget(file: File, targetBytes: number, mime: string, onPhase: (label: string) => void): Promise<TargetResult> {
+  onPhase('Decoding…');
+  const bitmap = await createImageBitmap(file);
+  try {
+    if (!bitmap.width || !bitmap.height) throw new Error('Browser could not decode this image (0×0 dimensions reported)');
+    if (bitmap.width * bitmap.height > MAX_CANVAS_PIXELS) {
+      throw new Error(`Image is ${bitmap.width}×${bitmap.height}px — too large for your browser to process (limit ~${MAX_CANVAS_PIXELS.toLocaleString()}px total)`);
+    }
+
+    const flatten = mime === 'image/jpeg';
+    // A 12 MP phone photo can never fit a 20–200 KB budget at full size, and
+    // encoding it over and over just to learn that is slow — so start from a
+    // pixel count that suits the budget (~8 px per byte lands a typical photo
+    // around JPEG quality 50–70) instead of full resolution.
+    let scale = Math.min(1, Math.sqrt((targetBytes * 8) / (bitmap.width * bitmap.height)));
+    let smallest: TargetResult | null = null;
+    let qualityShrinks = 0;
+
+    for (let round = 0; round < 10; round++) {
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      onPhase(round === 0 ? 'Finding best quality…' : `Resizing to ${width}×${height}…`);
+      const imageData = drawScaled(bitmap, width, height, flatten);
+
+      // Top of the range first: if even max quality fits, we're done.
+      const top = await encodeImageData(imageData, TARGET_MAX_Q, mime);
+      if (top.size <= targetBytes) return { blob: top, width, height, quality: TARGET_MAX_Q, hitTarget: true };
+
+      let lo = TARGET_MIN_Q, hi = TARGET_MAX_Q - 1;
+      let best: TargetResult | null = null;
+      let floorSize = Infinity;
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        onPhase(`Trying quality ${mid}…`);
+        const blob = await encodeImageData(imageData, mid, mime);
+        if (mid === TARGET_MIN_Q) floorSize = blob.size;
+        if (blob.size <= targetBytes) {
+          best = { blob, width, height, quality: mid, hitTarget: true };
+          lo = mid + 1;
+        } else {
+          if (!smallest || blob.size < smallest.blob.size) smallest = { blob, width, height, quality: mid, hitTarget: false };
+          hi = mid - 1;
+        }
+      }
+      if (best) {
+        const canShrink = Math.min(width, height) * 0.8 > TARGET_MIN_SIDE;
+        if (best.quality >= TARGET_GOOD_Q || qualityShrinks >= TARGET_MAX_QUALITY_SHRINKS || !canShrink) return best;
+        qualityShrinks++;
+        scale *= 0.8;
+        continue;
+      }
+
+      if (floorSize === Infinity) floorSize = smallest!.blob.size;
+      if (Math.min(width, height) <= TARGET_MIN_SIDE) break;
+
+      // Shrink so the lowest-quality encode should land comfortably under the
+      // target — and always by at least 10% so the loop keeps making progress.
+      scale *= Math.min(0.9, Math.sqrt(targetBytes / floorSize) * 0.92);
+    }
+
+    return smallest!;
+  } finally {
+    bitmap.close();
+  }
+}
+
 interface CompressRequest {
   type: 'compress';
   reqId: string;
   file: File;
   quality: number;
   mime: string;
+  /** When set, `quality` is ignored and the worker aims for this maximum
+   *  output size instead, resizing if quality alone can't get there. */
+  targetBytes?: number;
 }
 
 self.onmessage = async (e: MessageEvent<CompressRequest>) => {
-  const { type, reqId, file, quality, mime } = e.data;
+  const { type, reqId, file, quality, mime, targetBytes } = e.data;
   if (type !== 'compress') return;
+  const onPhase = (label: string) => self.postMessage({ type: 'phase', reqId, label });
 
   try {
-    let blob = await compress(file, quality, mime, (label) => {
-      self.postMessage({ type: 'phase', reqId, label });
-    });
+    if (targetBytes) {
+      const { blob, width, height, quality: usedQuality, hitTarget } = await compressToTarget(file, targetBytes, mime, onPhase);
+      self.postMessage({ type: 'done', reqId, blob, target: { width, height, quality: usedQuality, hitTarget } });
+      return;
+    }
+
+    let blob = await compress(file, quality, mime, onPhase);
 
     // Never hand back something bigger than the original for a same-format
     // request — quantization/dithering/canvas re-encoding can occasionally

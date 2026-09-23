@@ -9,6 +9,7 @@ import GlobalStats from '../components/GlobalStats.astro';
 import Products from '../components/Products.astro';
 import CompressionShowcase from '../components/CompressionShowcase.astro';
 import WordPressPlugin from '../components/WordPressPlugin.astro';
+import ToolLinks from '../components/ToolLinks.astro';
 import Footer from '../components/Footer.astro';
 import { faqs } from '../data/faq';
 
@@ -67,12 +68,13 @@ const websiteSchema = {
   </Fragment>
   <Nav />
   <main>
-    <Compressor />
+    <Compressor rememberFormat />
     <GlobalStats />
     <CompressionShowcase />
     <Products />
     <Features />
     <HowItWorks />
+    <ToolLinks />
     <FAQ />
     <WordPressPlugin />
   </main>

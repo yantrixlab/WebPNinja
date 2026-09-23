@@ -13,12 +13,33 @@ const links = [
     ],
   },
   {
-    label: "Formats",
+    label: "Convert",
     items: [
-      { text: "Compress PNG", href: "/#compressor" },
-      { text: "Compress JPEG", href: "/#compressor" },
-      { text: "Convert to WebP", href: "/#compressor" },
-      { text: "Convert to AVIF", href: "/#compressor" },
+      { text: "PNG to WebP", href: "/png-to-webp" },
+      { text: "JPG to WebP", href: "/jpg-to-webp" },
+      { text: "WebP to JPG", href: "/webp-to-jpg" },
+      { text: "WebP to PNG", href: "/webp-to-png" },
+      { text: "PNG to AVIF", href: "/png-to-avif" },
+    ],
+  },
+  {
+    label: "Compress",
+    items: [
+      { text: "Compress JPEG", href: "/compress-jpeg" },
+      { text: "Compress PNG", href: "/compress-png" },
+      { text: "Compress GIF", href: "/compress-gif" },
+      { text: "All tools", href: "/tools" },
+    ],
+  },
+  {
+    label: "Exact file size",
+    items: [
+      { text: "Compress to 20KB", href: "/compress-image-to-20kb" },
+      { text: "Compress to 50KB", href: "/compress-image-to-50kb" },
+      { text: "Compress to 100KB", href: "/compress-image-to-100kb" },
+      { text: "Compress to 200KB", href: "/compress-image-to-200kb" },
+      { text: "Passport photo", href: "/compress-passport-photo" },
+      { text: "Signature", href: "/compress-signature" },
     ],
   },
   {
@@ -35,10 +56,10 @@ const links = [
 <footer class="bg-[#ffffff] border-t border-[#ebebeb]">
   <div class="max-w-[1400px] mx-auto px-6 py-16">
 
-    <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4 mb-16">
+    <div class="grid gap-12 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-16">
 
       <!-- Brand column -->
-      <div class="flex flex-col gap-4">
+      <div class="col-span-2 sm:col-span-3 lg:col-span-1 flex flex-col gap-4">
         <a href="/" class="flex items-center gap-2">
           <img src="/ninja-mascot.png" width="40" height="40" alt="" class="w-10 h-10 object-contain" />
           <span class="text-[14px] font-semibold tracking-[-0.28px]"><span class="text-[#171717]">WebP</span> <span class="text-[#f5b400]">Ninja</span></span>

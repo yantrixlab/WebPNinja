@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import ToolLinks from '../components/ToolLinks.astro';
+import Footer from '../components/Footer.astro';
+import { tools } from '../data/tools';
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+
+const itemListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'WebP Ninja image tools',
+  itemListElement: tools.map((t, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: t.label,
+    url: `${siteUrl}/${t.slug}`,
+  })),
+};
+---
+
+<Layout
+  title="Free Image Tools — Convert, Compress, Resize to KB | WebP Ninja"
+  description="Free, private image tools: convert PNG/JPG to WebP or AVIF, compress JPEG, PNG and GIF, and compress photos to 20KB, 50KB, 100KB or 200KB for forms."
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(itemListSchema)} />
+  </Fragment>
+  <Nav />
+  <main>
+    <section class="relative overflow-hidden py-20 px-6 text-center">
+      <div class="absolute inset-0 mesh-gradient pointer-events-none" aria-hidden="true"></div>
+      <div class="relative max-w-[640px] mx-auto">
+        <h1 class="text-[40px] sm:text-[52px] font-bold leading-[1.05] tracking-[-2.5px] text-[#111] mb-5">
+          Free image tools.<br /><span class="hero-gradient-text">All in your browser.</span>
+        </h1>
+        <p class="text-[17px] leading-[28px] text-[#666]">
+          Convert between formats, compress without visible loss, or hit an exact file size for an upload form.
+          Every tool runs on your device — nothing is uploaded, and there are no limits.
+        </p>
+      </div>
+    </section>
+    <ToolLinks eyebrow="# All tools" heading="Pick a tool" background="#fafafa" />
+  </main>
+  <Footer />
+</Layout>
