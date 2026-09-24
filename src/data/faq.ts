@@ -17,7 +17,7 @@ export const faqs = [
   },
   {
     q: "Does compression reduce image quality?",
-    a: "It depends on the quality setting. At 80% (our default), the difference is visually imperceptible for most images. Use the quality slider to find the right balance between file size and fidelity for your use case.",
+    a: "It depends on the quality setting. With WebP at our default of 60, the difference is hard to spot for most photos — and screenshots or graphics look identical even far lower. Use the quality slider to find the right balance between file size and fidelity for your use case.",
   },
   {
     q: "Can I paste a screenshot directly?",

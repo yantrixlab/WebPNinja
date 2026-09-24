@@ -57,7 +57,7 @@ export const tools: ToolPage[] = [
     highlight: 'converter.',
     sub: 'Turn heavy PNGs into WebP files that are typically <strong class="text-[#111] font-semibold">25–80% smaller</strong> — transparency included. Runs entirely in your browser.',
     format: 'webp',
-    quality: 20,
+    quality: 60,
     introHeading: 'Why convert PNG to WebP?',
     intro: [
       'PNG is lossless, which makes it great for editing but heavy on the web — a single screenshot or product cut-out can easily weigh a few megabytes. WebP was built by Google specifically for websites: it supports the same alpha transparency as PNG while producing far smaller files.',
@@ -95,7 +95,7 @@ export const tools: ToolPage[] = [
     highlight: 'in one click.',
     sub: 'Convert JPEG photos to WebP and cut their size by <strong class="text-[#111] font-semibold">25–35% or more</strong> with no visible difference. Private, unlimited and free.',
     format: 'webp',
-    quality: 20,
+    quality: 60,
     introHeading: 'JPEG to WebP: same photo, fewer bytes',
     intro: [
       'JPEG has been the default photo format for 30 years, but its compression is dated. WebP uses newer prediction and entropy coding, so the same photo at the same visual quality comes out noticeably smaller — which means faster product pages, blogs and galleries.',
