@@ -321,14 +321,34 @@ await File.WriteAllBytesAsync("photo.webp", await response.Content.ReadAsByteArr
             </tr>
             <tr class="border-b border-[#ebebeb]">
               <td class="py-2 pr-4 font-mono">413</td>
-              <td class="py-2">File exceeds your plan's upload size limit.</td>
+              <td class="py-2">File exceeds your plan's upload size limit. Includes <code class="font-mono">maxUploadMb</code>, <code class="font-mono">fileSizeMb</code> and, when a plan allows a file that size, an <code class="font-mono">upgrade</code> object.</td>
             </tr>
             <tr>
               <td class="py-2 pr-4 font-mono">429</td>
-              <td class="py-2">Daily quota (Free plan) or rate limit exceeded.</td>
+              <td class="py-2">Daily quota (Free plan) or rate limit exceeded. Quota errors include <code class="font-mono">quota</code>, <code class="font-mono">used</code>, <code class="font-mono">resetsAt</code> (ISO timestamp) and an <code class="font-mono">upgrade</code> object.</td>
             </tr>
           </tbody>
         </table>
+        <p class="mt-4">
+          Every error body has a human-readable <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">error</code> message.
+          Plan-limit errors also include an <code class="font-mono text-[13px] bg-[#f5f5f5] px-1.5 py-0.5 rounded-[4px]">upgrade</code>
+          object naming the cheapest plan that removes the limit, so your app can show its own upgrade prompt:
+        </p>
+        <pre class="mt-3 p-4 rounded-[8px] bg-[#171717] text-[#e5e5e5] text-[12px] leading-[18px] overflow-x-auto"><code>{`HTTP/1.1 413 Payload Too Large
+
+{
+  "error": "This file (17.84 MB) exceeds the 15 MB per-image limit of your Free plan. Upgrade to the Starter plan to compress images up to 33 MB: https://webpninja.com/pricing",
+  "maxUploadMb": 15,
+  "fileSizeMb": 17.84,
+  "upgrade": {
+    "plan": "starter",
+    "name": "Starter",
+    "priceInr": 299,
+    "maxUploadMb": 33,
+    "unlimitedCompressions": true,
+    "url": "https://webpninja.com/pricing"
+  }
+}`}</code></pre>
       </section>
     </div>
   </main>

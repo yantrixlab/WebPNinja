@@ -4,6 +4,8 @@ import { requireApiKey, incrementUsage } from '../middleware/requireApiKey.js';
 import { SUPPORTED_FORMATS } from '../lib/compress.js';
 import { compressImageIsolated } from '../lib/compressPool.js';
 import { rateLimit } from '../lib/rateLimiter.js';
+import { incrementGlobalCounter } from './stats.js';
+import { suggestUpgrade } from '../lib/upgrade.js';
 
 // Hard ceiling across all plans; the actual per-plan limit is enforced below
 // once we know which plan the API key belongs to.
@@ -27,10 +29,17 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
 
   const maxUploadMb = req.plan.maxUploadMb;
   if (req.file.size > maxUploadMb * 1024 * 1024) {
+    const fileSizeMb = Number((req.file.size / (1024 * 1024)).toFixed(2));
+    const upgrade = await suggestUpgrade(req.plan.id, { minUploadMb: Math.ceil(fileSizeMb) });
+    let error = `This file (${fileSizeMb} MB) exceeds the ${maxUploadMb} MB per-image limit of your ${req.plan.name} plan.`;
+    error += upgrade
+      ? ` Upgrade to the ${upgrade.name} plan to compress images up to ${upgrade.maxUploadMb} MB: ${upgrade.url}`
+      : ' Please reduce the image size and try again.';
     return res.status(413).json({
-      error: `File exceeds your ${req.plan.id} plan's ${maxUploadMb} MB upload limit`,
+      error,
       maxUploadMb,
-      fileSizeMb: Number((req.file.size / (1024 * 1024)).toFixed(2)),
+      fileSizeMb,
+      ...(upgrade && { upgrade }),
     });
   }
 
@@ -47,6 +56,8 @@ compressRouter.post('/api/v1/compress', requireApiKey, (req, res, next) => {
   try {
     const { buffer, mime, resizedFrom } = await compressImageIsolated(req.file.buffer, { format, quality });
     await incrementUsage(req.apiUserId, req.plan.quotaPeriod);
+    // Fire-and-forget: the public counter must never delay or fail the response.
+    incrementGlobalCounter(1);
     res.setHeader('Content-Type', mime);
     if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);
@@ -94,6 +105,9 @@ compressRouter.post('/api/v1/compress/fallback', fallbackRateLimit, (req, res, n
 
   try {
     const { buffer, mime, resizedFrom } = await compressImageIsolated(req.file.buffer, { format, quality });
+    // No incrementGlobalCounter() here: the browser tool already reports
+    // this image to /api/stats/increment when the fallback result arrives,
+    // so counting it here too would count it twice.
     res.setHeader('Content-Type', mime);
     if (resizedFrom) res.setHeader('X-Resized-From', `${resizedFrom.width}x${resizedFrom.height}`);
     res.send(buffer);

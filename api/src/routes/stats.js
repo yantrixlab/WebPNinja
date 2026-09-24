@@ -43,33 +43,40 @@ statsRouter.get('/api/stats', async (_req, res) => {
   }
 });
 
-statsRouter.post('/api/stats/increment', async (req, res) => {
-  const n = parseInt(req.body?.count ?? 1, 10);
-  if (!Number.isFinite(n) || n < 1 || n > 1000) {
-    return res.status(400).json({ error: 'invalid count' });
-  }
-
+/**
+ * Adds `n` to the public "images compressed" counter and pushes the new
+ * total to every open live-counter stream. Shared by the browser tool's
+ * increment endpoint, the Developer API and (opt-in) WordPress plugin
+ * reports. Never throws — a counter hiccup must not fail a compression.
+ */
+export async function incrementGlobalCounter(n) {
   if (!useDb) {
     memoryCounter += n;
     broadcast(memoryCounter);
-    return res.json({ total_images: memoryCounter });
+    return memoryCounter;
   }
-
   try {
     const { rows } = await pool.query(
       'UPDATE stats SET total_images = total_images + $1 WHERE id = 1 RETURNING total_images',
       [n]
     );
-    const newTotal = Number(rows[0]?.total_images ?? memoryCounter);
-    memoryCounter = newTotal;
-    broadcast(newTotal);
-    res.json({ total_images: newTotal });
+    memoryCounter = Number(rows[0]?.total_images ?? memoryCounter);
   } catch (err) {
     console.error('[increment]', err.message);
     memoryCounter += n;
-    broadcast(memoryCounter);
-    res.json({ total_images: memoryCounter });
   }
+  broadcast(memoryCounter);
+  return memoryCounter;
+}
+
+// Called by the browser tool after each image, and by WordPress sites whose
+// owner opted in to sharing a compression count (batched hourly, up to 1000).
+statsRouter.post('/api/stats/increment', async (req, res) => {
+  const n = parseInt(req.body?.count ?? 1, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 1000) {
+    return res.status(400).json({ error: 'invalid count' });
+  }
+  res.json({ total_images: await incrementGlobalCounter(n) });
 });
 
 statsRouter.get('/api/stats/stream', (req, res) => {
