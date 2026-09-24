@@ -229,12 +229,12 @@ class WebPNinja_Compressor {
 	public function compress_attachment( $attachment_id, $metadata = null ) {
 		$mime = get_post_mime_type( $attachment_id );
 		if ( ! in_array( $mime, self::MIMES, true ) ) {
-			return $this->save_result( $attachment_id, 'skipped', 0, 0, 0, __( 'Unsupported file type', 'webpninja' ) );
+			return $this->save_result( $attachment_id, 'skipped', 0, 0, 0, __( 'Unsupported file type', 'webp-ninja-image-compressor' ) );
 		}
 
 		$engine = self::engine();
 		if ( ! $engine ) {
-			return $this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Neither Imagick nor GD is available on this server', 'webpninja' ) );
+			return $this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Neither Imagick nor GD is available on this server', 'webp-ninja-image-compressor' ) );
 		}
 
 		if ( null === $metadata ) {
@@ -257,11 +257,11 @@ class WebPNinja_Compressor {
 		$paths = array_unique( $paths );
 
 		if ( ! $paths ) {
-			return $this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Image file not found on disk', 'webpninja' ) );
+			return $this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Image file not found on disk', 'webp-ninja-image-compressor' ) );
 		}
 
 		if ( $this->is_animated( $paths[0], $mime ) ) {
-			return $this->save_result( $attachment_id, 'skipped', 0, 0, 0, __( 'Animated image — left untouched to keep the animation', 'webpninja' ) );
+			return $this->save_result( $attachment_id, 'skipped', 0, 0, 0, __( 'Animated image — left untouched to keep the animation', 'webp-ninja-image-compressor' ) );
 		}
 
 		wp_raise_memory_limit( 'image' );
@@ -269,7 +269,7 @@ class WebPNinja_Compressor {
 		// Pessimistic marker, overwritten below on completion. If PHP dies
 		// mid-encode (memory/time limit), this image is recorded as failed
 		// instead of being retried forever by the bulk "compress existing" loop.
-		$this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Did not finish — the server may have run out of memory or time', 'webpninja' ) );
+		$this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Did not finish — the server may have run out of memory or time', 'webp-ninja-image-compressor' ) );
 
 		$quality   = self::quality();
 		$before    = 0;

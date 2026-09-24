@@ -3,6 +3,13 @@
 // this section can never advertise a different version than the zip ships.
 import pluginMain from '../../wordpress-plugin/webpninja-compressor/webpninja-compressor.php?raw';
 
+interface Props {
+  /** h1 on the dedicated /wordpress-plugin page, h2 as a homepage section. */
+  headingLevel?: 'h1' | 'h2';
+}
+const { headingLevel = 'h2' } = Astro.props;
+const Heading = headingLevel;
+
 const pluginVersion = pluginMain.match(/^\s*\*\s*Version:\s*([\d.]+)/m)?.[1];
 if (!pluginVersion) throw new Error('WordPressPlugin.astro: no "Version:" header found in webpninja-compressor.php');
 
@@ -38,9 +45,9 @@ const features = [
       <p class="font-mono text-[12px] text-[#888888] uppercase tracking-wider mb-4">
         # WordPress Plugin
       </p>
-      <h2 class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] max-w-[560px]">
+      <Heading class="text-[32px] font-semibold leading-[40px] tracking-[-1.28px] text-[#171717] max-w-[560px]">
         Bring WebP Ninja to your WordPress site.
-      </h2>
+      </Heading>
       <p class="mt-4 text-[16px] leading-[24px] text-[#4d4d4d] max-w-[480px]">
         Convert uploads to WebP and compress every image the moment it's uploaded — no API key, no external calls, all on your own server.
       </p>

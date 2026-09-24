@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       WebP Ninja Image Compressor
- * Plugin URI:        https://webpninja.com
+ * Plugin URI:        https://webpninja.com/wordpress-plugin
  * Description:       Compresses JPEG, PNG and WebP images on upload with Imagick or GD. Privacy-first — all compression happens on your own server.
  * Version:           1.2.0
  * Requires at least: 6.0
@@ -10,7 +10,7 @@
  * Author URI:        https://webpninja.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       webpninja
+ * Text Domain:       webp-ninja-image-compressor
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

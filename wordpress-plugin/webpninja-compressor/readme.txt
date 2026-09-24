@@ -1,5 +1,5 @@
 === WebP Ninja Image Compressor ===
-Contributors: webpninja
+Contributors: yantrixlab
 Tags: image compression, optimize images, compress jpeg, compress png, webp
 Requires at least: 6.0
 Tested up to: 7.1

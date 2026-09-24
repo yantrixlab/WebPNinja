@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import WordPressPlugin from '../components/WordPressPlugin.astro';
+import Footer from '../components/Footer.astro';
+
+// This page is the plugin's "Plugin URI" (see the plugin header), so it has
+// to exist at its own path — WordPress.org rejects a Plugin URI that matches
+// the Author URI (https://webpninja.com), and ignores #fragments.
+const faqs = [
+  {
+    q: 'Does the plugin send my images to an external server?',
+    a: 'No. All compression and conversion runs on your own WordPress server with Imagick or GD. There are no API keys, no external requests and no tracking.',
+  },
+  {
+    q: 'Does it convert images to WebP?',
+    a: 'Yes. New uploads are converted to WebP by default — or AVIF or JPEG if you prefer, or you can keep the original format. Conversion only happens when the result is smaller, and WebP/AVIF keep transparency.',
+  },
+  {
+    q: 'What about images I uploaded before installing it?',
+    a: 'Go to Settings → WebP Ninja and click "Compress existing images". Existing images are compressed but keep their format, so links in your existing posts keep working.',
+  },
+  {
+    q: 'Where do I see how much was saved?',
+    a: 'Open any image in the Media Library to see its savings, or switch the Media Library to list view for a WebP Ninja column. Settings → WebP Ninja shows the total saved.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+---
+
+<Layout
+  title="WebP Ninja WordPress Plugin — Compress & Convert Images to WebP"
+  description="Free WordPress plugin that converts uploads to WebP and compresses JPEG, PNG and WebP on your own server. No API key, no limits, no external calls."
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  </Fragment>
+  <Nav />
+  <main>
+    <WordPressPlugin headingLevel="h1" />
+
+    <section class="bg-white py-20 px-6 border-t border-[#ebebeb]">
+      <div class="max-w-[760px] mx-auto">
+        <h2 class="text-[28px] font-semibold leading-[1.2] tracking-[-1px] text-[#171717] mb-10 text-center">Plugin FAQ</h2>
+        <div class="flex flex-col divide-y divide-[#ebebeb]">
+          {faqs.map((faq) => (
+            <details class="group py-5 cursor-pointer list-none" name="faq">
+              <summary class="flex items-center justify-between gap-4 text-[16px] font-medium text-[#171717] cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                {faq.q}
+                <span class="shrink-0 w-6 h-6 rounded-full border border-[#ebebeb] flex items-center justify-center transition-transform group-open:rotate-45">
+                  <svg width="12" height="12" fill="none" stroke="#171717" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+              </summary>
+              <p class="mt-3 text-[15px] leading-[24px] text-[#4d4d4d]">{faq.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
