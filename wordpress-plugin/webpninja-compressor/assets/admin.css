@@ -68,3 +68,67 @@
 .webpninja-footer a:hover {
 	text-decoration: underline;
 }
+
+.webpninja-card h3 {
+	font-size: 14px;
+	margin: 20px 0 4px;
+}
+
+/* ── Status text (settings page, media column, attachment modal) ── */
+.webpninja-muted {
+	color: #787c82;
+}
+
+.webpninja-good {
+	color: #008a20;
+}
+
+.webpninja-bad {
+	color: #d63638;
+}
+
+.webpninja-status .button {
+	margin-top: 4px;
+}
+
+.column-webpninja_savings {
+	width: 170px;
+}
+
+/* ── Stats ── */
+.webpninja-stats {
+	display: flex;
+	gap: 48px;
+}
+
+.webpninja-stats > div {
+	display: flex;
+	flex-direction: column;
+}
+
+.webpninja-stat {
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+/* ── Bulk progress ── */
+.webpninja-progress {
+	height: 8px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	overflow: hidden;
+	margin: 12px 0 8px;
+}
+
+.webpninja-progress-bar {
+	width: 0;
+	height: 100%;
+	background: #0070f3;
+	transition: width 0.2s;
+}
+
+.webpninja-check td:first-child {
+	width: 180px;
+	font-weight: 600;
+}
