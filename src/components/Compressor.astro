@@ -28,7 +28,7 @@ const {
   sub = 'Up to <strong class="text-[#111] font-semibold">80% smaller</strong> in seconds — PNG, JPEG, WebP, AVIF and more. Powered by MozJPEG & oxipng. Runs entirely in your browser.',
   eyebrow = '100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever',
   defaultFormat = 'webp',
-  defaultQuality = 20,
+  defaultQuality = 60,
   targetKB = 0,
   rememberFormat = false,
   fullHeight = true,
@@ -1260,14 +1260,46 @@ function updateStats() {
 
 /* ══════════════ DOWNLOAD ══════════════ */
 
+// Paid subscribers (Starter/Pro) download files under their original name;
+// everyone else gets a "-webp_ninja" suffix. Every signed-in account has an
+// active *Free* subscription, so "paid" means an active plan that costs
+// money, not merely an active subscription. Resolved once per page load from
+// the dashboard's session token; anything that fails means "free". This only
+// decides a filename, so trusting the browser here is fine.
+const SESSION_KEY = 'webpninja_session'; // same key dashboard.astro stores its JWT under
+let isPaidUser = false;
+
+(async () => {
+  let token: string | null = null;
+  try { token = localStorage.getItem(SESSION_KEY); } catch { /* storage blocked */ }
+  if (!token || !API_URL) return;
+  try {
+    const res = await fetch(`${API_URL}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const me = await res.json();
+    isPaidUser = me?.plan?.status === 'active' && Number(me.plan.price_inr) > 0;
+  } catch { /* offline / API down — keep the free-tier name */ }
+})();
+
+const FREE_SUFFIX = '-webp_ninja';
+
+/** Download name for a result. Paid users keep the original name exactly
+ *  (including e.g. ".jpeg" vs ".jpg") when the format didn't change, and the
+ *  original base name with the new extension when it did. */
+function outputFileName(item: FileItem): string {
+  const base = item.file.name.replace(/\.[^.]+$/, '');
+  const ext = mimeToExt(item.outputMime);
+  if (!isPaidUser) return `${base}${FREE_SUFFIX}.${ext}`;
+  const sameFormat = item.outputMime === item.file.type && /\.[^.]+$/.test(item.file.name);
+  return sameFormat ? item.file.name : `${base}.${ext}`;
+}
+
 function downloadFile(id: string) {
   const item = store.get(id);
   if (!item?.blob || !item.objectUrl) return;
-  const ext = mimeToExt(item.outputMime);
-  const baseName = item.file.name.replace(/\.[^.]+$/, '');
   const a = document.createElement('a');
   a.href = item.objectUrl;
-  a.download = `${baseName}-tiny.${ext}`;
+  a.download = outputFileName(item);
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1276,11 +1308,17 @@ function downloadFile(id: string) {
 async function downloadAll() {
   const zip = new JSZip();
   let count = 0;
+  // Without a suffix, two uploads named "photo.png" would overwrite each
+  // other inside the ZIP — number any repeats: "photo (2).png".
+  const used = new Set<string>();
   for (const [id, item] of store) {
     if (item.status === 'done' && item.blob) {
-      const ext = mimeToExt(item.outputMime);
-      const baseName = item.file.name.replace(/\.[^.]+$/, '');
-      zip.file(`${baseName}-tiny.${ext}`, item.blob);
+      let name = outputFileName(item);
+      for (let n = 2; used.has(name.toLowerCase()); n++) {
+        name = outputFileName(item).replace(/(\.[^.]+)?$/, ` (${n})$1`);
+      }
+      used.add(name.toLowerCase());
+      zip.file(name, item.blob);
       count++;
     }
   }
@@ -1344,10 +1382,11 @@ formatSelect.addEventListener('change', () => {
     try { localStorage.setItem(FORMAT_PREF_KEY, outputFormat); } catch { /* ignore */ }
   }
 
-  // WebP compresses far more aggressively than other formats at the same
-  // quality value, so default to a much lower quality when switching to it.
+  // Switching to WebP resets to its default of 60. Measured on the showcase
+  // images: at 20 a photo visibly smears (SSIM 0.86) while 60 looks close to
+  // the original (SSIM 0.94) and is still ~94% smaller than the source PNG.
   if (outputFormat === 'webp') {
-    quality = 20;
+    quality = 60;
     qualitySlider.value = String(quality);
     if (!targetKB) qualityDisplay.textContent = `${quality}%`;
   }
