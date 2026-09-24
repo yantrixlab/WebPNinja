@@ -125,7 +125,7 @@ class WebPNinja_Settings {
 		}
 
 		$id     = (int) $query->posts[0];
-		$result = $this->compressor->compress_attachment( $id );
+		$result = $this->compressor->compress_existing( $id );
 
 		wp_send_json_success( [
 			'remaining' => max( 0, (int) $query->found_posts - 1 ),

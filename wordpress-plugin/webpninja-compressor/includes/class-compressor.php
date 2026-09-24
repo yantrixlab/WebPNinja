@@ -57,8 +57,49 @@ class WebPNinja_Compressor {
 	public function compress_on_upload( $metadata, $attachment_id ) {
 		if ( get_option( 'webpninja_auto', 1 ) ) {
 			$this->compress_attachment( $attachment_id, $metadata );
+			// Core measured the file sizes before this filter ran; refresh them
+			// so "File size" in the Media Library shows the compressed size.
+			$metadata = $this->refresh_filesizes( $attachment_id, $metadata );
 		}
 		return $metadata;
+	}
+
+	/**
+	 * Updates the `filesize` values WordPress (6.0+) caches in attachment
+	 * metadata for the main file and each generated size.
+	 */
+	public function refresh_filesizes( $attachment_id, $metadata ) {
+		if ( ! is_array( $metadata ) ) {
+			return $metadata;
+		}
+		$attached = get_attached_file( $attachment_id );
+		if ( $attached && file_exists( $attached ) ) {
+			clearstatcache( true, $attached );
+			$metadata['filesize'] = (int) filesize( $attached );
+			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+				$dir = trailingslashit( dirname( $attached ) );
+				foreach ( $metadata['sizes'] as $name => $size ) {
+					if ( ! empty( $size['file'] ) && file_exists( $dir . $size['file'] ) ) {
+						clearstatcache( true, $dir . $size['file'] );
+						$metadata['sizes'][ $name ]['filesize'] = (int) filesize( $dir . $size['file'] );
+					}
+				}
+			}
+		}
+		return $metadata;
+	}
+
+	/**
+	 * Compresses an attachment that already exists (manual/bulk) and saves the
+	 * refreshed file sizes to its metadata.
+	 */
+	public function compress_existing( $attachment_id ) {
+		$result   = $this->compress_attachment( $attachment_id );
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+		if ( is_array( $metadata ) && 'done' === $result['status'] && $result['after'] < $result['before'] ) {
+			wp_update_attachment_metadata( $attachment_id, $this->refresh_filesizes( $attachment_id, $metadata ) );
+		}
+		return $result;
 	}
 
 	/**

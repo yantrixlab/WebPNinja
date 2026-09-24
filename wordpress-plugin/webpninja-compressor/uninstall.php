@@ -11,6 +11,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'webpninja_quality' );
 delete_option( 'webpninja_auto' );
 delete_option( 'webpninja_png_lossy' );
+delete_option( 'webpninja_db_version' );
 delete_transient( 'webpninja_activated' );
 
 delete_post_meta_by_key( '_webpninja' );

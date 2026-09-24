@@ -4,7 +4,7 @@ Tags: image compression, optimize images, compress jpeg, compress png, webp
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,9 @@ Yes. With Imagick, transparent PNGs get full smart compression. With GD only, tr
 
 == Changelog ==
 
+= 1.1.1 =
+* Fix: the Media Library's "File size" now shows the compressed size (it showed the size before compression). Images compressed by 1.1.0 are corrected automatically.
+
 = 1.1.0 =
 * Fix: PNGs could come out larger than the original with Imagick. PNGs now get real smart (palette) compression.
 * Fix: files are only replaced when the result is smaller — compression can never grow an image.
@@ -77,6 +80,9 @@ Yes. With Imagick, transparent PNGs get full smart compression. With GD only, tr
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Shows correct file sizes in the Media Library after compression.
 
 = 1.1.0 =
 Fixes PNG compression and adds "Compress existing images". Recommended for all users.

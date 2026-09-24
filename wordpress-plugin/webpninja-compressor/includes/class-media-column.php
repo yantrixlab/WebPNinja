@@ -132,7 +132,7 @@ class WebPNinja_Media_Column {
 		if ( ! $id || ! current_user_can( 'edit_post', $id ) ) {
 			wp_send_json_error( [ 'message' => __( 'You are not allowed to edit this image.', 'webpninja' ) ], 403 );
 		}
-		$this->compressor->compress_attachment( $id );
+		$this->compressor->compress_existing( $id );
 		wp_send_json_success( [ 'html' => self::status_html( $id ) ] );
 	}
 
@@ -153,7 +153,7 @@ class WebPNinja_Media_Column {
 				if ( function_exists( 'set_time_limit' ) ) {
 					@set_time_limit( 60 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled on the host.
 				}
-				$this->compressor->compress_attachment( $id );
+				$this->compressor->compress_existing( $id );
 				++$count;
 			}
 		}
