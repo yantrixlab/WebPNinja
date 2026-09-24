@@ -37,6 +37,13 @@ class WebPNinja_Settings {
 				return max( 1, min( 100, (int) $v ) );
 			},
 		] );
+		register_setting( 'webpninja_group', 'webpninja_format', [
+			'type'              => 'string',
+			'default'           => 'webp',
+			'sanitize_callback' => function ( $v ) {
+				return isset( WebPNinja_Compressor::OUTPUT_FORMATS[ $v ] ) ? $v : 'original';
+			},
+		] );
 		foreach ( [ 'webpninja_auto', 'webpninja_png_lossy' ] as $option ) {
 			register_setting( 'webpninja_group', $option, [
 				'type'              => 'boolean',
@@ -149,7 +156,17 @@ class WebPNinja_Settings {
 		$engine    = WebPNinja_Compressor::engine();
 		$pending   = $this->pending_count();
 		$saved     = $this->total_saved();
-		$webp_ok   = 'imagick' === $engine ? in_array( 'WEBP', Imagick::queryFormats( 'WEBP' ), true ) : function_exists( 'imagewebp' );
+		$format    = (string) get_option( 'webpninja_format', 'webp' );
+		$supported = [];
+		foreach ( WebPNinja_Compressor::OUTPUT_FORMATS as $key => $mime ) {
+			$supported[ $key ] = WebPNinja_Compressor::format_supported( $mime );
+		}
+		$format_labels = [
+			'webp'     => __( 'WebP (recommended) — 25–35% smaller than JPEG, keeps transparency', 'webpninja' ),
+			'avif'     => __( 'AVIF — smallest files, slower to encode, keeps transparency', 'webpninja' ),
+			'jpeg'     => __( 'JPEG — maximum compatibility (transparent areas become white)', 'webpninja' ),
+			'original' => __( 'Keep original format — compress only', 'webpninja' ),
+		];
 		?>
 		<div class="wrap webpninja-wrap">
 			<div class="webpninja-header">
@@ -205,6 +222,23 @@ class WebPNinja_Settings {
 						</label>
 					</p>
 
+					<h3><?php esc_html_e( 'Output format for new uploads', 'webpninja' ); ?></h3>
+					<fieldset class="webpninja-formats">
+						<?php foreach ( $format_labels as $key => $label ) : ?>
+							<?php $available = 'original' === $key || ! empty( $supported[ $key ] ); ?>
+							<label class="<?php echo $available ? '' : 'webpninja-muted'; ?>">
+								<input type="radio" name="webpninja_format" value="<?php echo esc_attr( $key ); ?>" <?php checked( $format, $key ); ?> <?php disabled( ! $available ); ?>>
+								<?php echo esc_html( $label ); ?>
+								<?php if ( ! $available ) : ?>
+									<em><?php esc_html_e( '— not supported by this server', 'webpninja' ); ?></em>
+								<?php endif; ?>
+							</label>
+						<?php endforeach; ?>
+					</fieldset>
+					<p class="description">
+						<?php esc_html_e( 'JPEG, PNG and WebP uploads are converted to this format, and only when the result is smaller. Existing images keep their format (converting them would break links in posts that already use them). Animated images are never converted.', 'webpninja' ); ?>
+					</p>
+
 					<h3><label for="webpninja_quality"><?php esc_html_e( 'Quality', 'webpninja' ); ?></label></h3>
 					<p><?php esc_html_e( 'Higher values preserve more detail; lower values produce smaller files. 80–85 is a great balance for most sites.', 'webpninja' ); ?></p>
 					<div class="webpninja-slider-row">
@@ -240,10 +274,26 @@ class WebPNinja_Settings {
 								<?php endif; ?>
 							</td>
 						</tr>
-						<tr>
-							<td><?php esc_html_e( 'WebP support', 'webpninja' ); ?></td>
-							<td><?php echo $webp_ok ? '<span class="webpninja-good">✓</span>' : '<span class="webpninja-bad">✗</span> <span class="webpninja-muted">' . esc_html__( 'WebP uploads will be skipped', 'webpninja' ) . '</span>'; ?></td>
-						</tr>
+						<?php foreach ( [ 'webp' => 'WebP', 'avif' => 'AVIF' ] as $key => $name ) : ?>
+							<tr>
+								<?php /* translators: %s: image format name */ ?>
+								<td><?php echo esc_html( sprintf( __( '%s output', 'webpninja' ), $name ) ); ?></td>
+								<td>
+									<?php if ( $supported[ $key ] ) : ?>
+										<span class="webpninja-good">✓</span>
+									<?php else : ?>
+										<span class="webpninja-bad">✗</span>
+										<span class="webpninja-muted">
+											<?php
+											echo 'avif' === $key && version_compare( get_bloginfo( 'version' ), '6.5', '<' )
+												? esc_html__( 'needs WordPress 6.5+', 'webpninja' )
+												: esc_html__( 'your server’s image library can’t encode it — ask your host to update Imagick/GD', 'webpninja' );
+											?>
+										</span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
 						<tr>
 							<td><?php esc_html_e( 'PHP memory limit', 'webpninja' ); ?></td>
 							<td><?php echo esc_html( ini_get( 'memory_limit' ) ); ?></td>

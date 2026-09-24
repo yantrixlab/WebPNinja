@@ -18,7 +18,23 @@ class WebPNinja_Compressor {
 	/** Legacy (1.0.x) meta key — still written so old data stays readable. */
 	const SAVED_META_KEY = '_webpninja_bytes_saved';
 
-	const MIMES = [ 'image/jpeg', 'image/png', 'image/webp' ];
+	const MIMES = [ 'image/jpeg', 'image/png', 'image/webp', 'image/avif' ];
+
+	/** Uploads in these formats can be converted to the chosen output format. */
+	const CONVERTIBLE_MIMES = [ 'image/jpeg', 'image/png', 'image/webp' ];
+
+	/** Output format setting value => MIME type. '' (keep original) is also valid. */
+	const OUTPUT_FORMATS = [
+		'webp' => 'image/webp',
+		'avif' => 'image/avif',
+		'jpeg' => 'image/jpeg',
+	];
+
+	const EXTENSIONS = [
+		'image/webp' => 'webp',
+		'image/avif' => 'avif',
+		'image/jpeg' => 'jpg',
+	];
 
 	/**
 	 * A re-encode that saves less than this isn't worth the generation loss
@@ -26,11 +42,111 @@ class WebPNinja_Compressor {
 	 */
 	const MIN_SAVING_RATIO = 0.03;
 
+	/**
+	 * Files converted during this request, keyed by their new path: the
+	 * original MIME type and size. Lets the compress pass that follows count
+	 * the conversion as savings and skip re-encoding a file we just encoded.
+	 *
+	 * @var array<string,array{from:string,before:int}>
+	 */
+	private $converted = [];
+
 	public function __construct() {
+		add_filter( 'wp_handle_upload', [ $this, 'convert_upload' ], 10, 2 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'compress_on_upload' ], 10, 2 );
-		// Make WordPress itself generate JPEG/WebP thumbnails at our quality,
-		// so they come out small in one pass instead of being encoded twice.
+		// Make WordPress itself generate JPEG/WebP/AVIF thumbnails at our
+		// quality, so they come out small in one pass instead of being encoded twice.
 		add_filter( 'wp_editor_set_quality', [ $this, 'editor_quality' ], 10, 2 );
+	}
+
+	/* ─────────── Output format ─────────── */
+
+	/** The chosen output MIME type, or '' to keep each upload's format. */
+	public static function output_mime() {
+		$format = (string) get_option( 'webpninja_format', 'webp' );
+		return self::OUTPUT_FORMATS[ $format ] ?? '';
+	}
+
+	/**
+	 * Whether this server can both encode the format and have WordPress build
+	 * thumbnails from it (AVIF uploads need WordPress 6.5+).
+	 */
+	public static function format_supported( $mime ) {
+		if ( 'image/avif' === $mime && version_compare( get_bloginfo( 'version' ), '6.5', '<' ) ) {
+			return false;
+		}
+		$engine = self::engine();
+		if ( 'imagick' === $engine ) {
+			$ext = strtoupper( 'image/jpeg' === $mime ? 'jpeg' : self::EXTENSIONS[ $mime ] );
+			if ( ! in_array( $ext, Imagick::queryFormats( $ext ), true ) ) {
+				return false;
+			}
+		} elseif ( 'gd' === $engine ) {
+			$fn = [ 'image/webp' => 'imagewebp', 'image/avif' => 'imageavif', 'image/jpeg' => 'imagejpeg' ][ $mime ] ?? '';
+			if ( ! $fn || ! function_exists( $fn ) ) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		return wp_image_editor_supports( [ 'mime_type' => $mime ] );
+	}
+
+	/**
+	 * Converts a fresh upload to the chosen output format before WordPress
+	 * creates the attachment — so the attachment, its thumbnails and its URLs
+	 * are all in the new format from the start. Existing images are never
+	 * converted: their URLs are already embedded in posts.
+	 *
+	 * @param array  $upload  { file, url, type } from wp_handle_upload().
+	 * @param string $context 'upload' or 'sideload'.
+	 */
+	public function convert_upload( $upload, $context = 'upload' ) {
+		$target = self::output_mime();
+		if (
+			! $target || ! empty( $upload['error'] ) || empty( $upload['file'] ) || empty( $upload['type'] ) ||
+			$upload['type'] === $target ||
+			! in_array( $upload['type'], self::CONVERTIBLE_MIMES, true ) ||
+			! self::format_supported( $target ) ||
+			$this->is_animated( $upload['file'], $upload['type'] )
+		) {
+			return $upload;
+		}
+
+		$src    = $upload['file'];
+		$dir    = dirname( $src );
+		$name   = wp_unique_filename( $dir, pathinfo( $src, PATHINFO_FILENAME ) . '.' . self::EXTENSIONS[ $target ] );
+		$dest   = trailingslashit( $dir ) . $name;
+		$before = (int) filesize( $src );
+
+		wp_raise_memory_limit( 'image' );
+		try {
+			$ok = 'imagick' === self::engine()
+				? $this->encode_imagick( $src, $dest, $target, self::quality() )
+				: $this->encode_gd( $src, $dest, $target, self::quality() );
+		} catch ( Throwable $e ) {
+			$ok = false;
+		}
+
+		clearstatcache( true, $dest );
+		$after = $ok && file_exists( $dest ) ? (int) filesize( $dest ) : 0;
+
+		// Only switch formats when it actually helps (a tiny, already
+		// well-compressed JPEG can come out larger as WebP).
+		if ( $after <= 0 || $after >= $before ) {
+			if ( file_exists( $dest ) ) {
+				wp_delete_file( $dest );
+			}
+			return $upload;
+		}
+
+		wp_delete_file( $src );
+		$this->converted[ wp_normalize_path( $dest ) ] = [ 'from' => $upload['type'], 'before' => $before ];
+
+		$upload['file'] = $dest;
+		$upload['url']  = trailingslashit( dirname( $upload['url'] ) ) . $name;
+		$upload['type'] = $target;
+		return $upload;
 	}
 
 	public static function quality() {
@@ -48,7 +164,7 @@ class WebPNinja_Compressor {
 	}
 
 	public function editor_quality( $quality, $mime = '' ) {
-		if ( in_array( $mime, [ 'image/jpeg', 'image/webp' ], true ) ) {
+		if ( in_array( $mime, [ 'image/jpeg', 'image/webp', 'image/avif' ], true ) ) {
 			return self::quality();
 		}
 		return $quality;
@@ -155,16 +271,26 @@ class WebPNinja_Compressor {
 		// instead of being retried forever by the bulk "compress existing" loop.
 		$this->save_result( $attachment_id, 'failed', 0, 0, 0, __( 'Did not finish — the server may have run out of memory or time', 'webpninja' ) );
 
-		$quality = self::quality();
-		$before  = 0;
-		$after   = 0;
+		$quality   = self::quality();
+		$before    = 0;
+		$after     = 0;
+		$key       = wp_normalize_path( $attached );
+		$converted = $this->converted[ $key ] ?? null;
 		foreach ( $paths as $path ) {
-			$size_before = (int) filesize( $path );
-			$before     += $size_before;
-			$after      += $this->compress_file( $path, $mime, $quality, $engine );
+			if ( $converted && $path === $attached ) {
+				// Just encoded by convert_upload(): count the original upload's
+				// size as "before", and don't re-encode it a second time.
+				$before += $converted['before'];
+				$after  += (int) filesize( $path );
+				continue;
+			}
+			$before += (int) filesize( $path );
+			$after  += $this->compress_file( $path, $mime, $quality, $engine );
 		}
 
-		return $this->save_result( $attachment_id, 'done', $before, $after, count( $paths ) );
+		$result = $this->save_result( $attachment_id, 'done', $before, $after, count( $paths ), '', $converted ? $converted['from'] : '' );
+		unset( $this->converted[ $key ] );
+		return $result;
 	}
 
 	/**
@@ -216,6 +342,14 @@ class WebPNinja_Compressor {
 
 		switch ( $mime ) {
 			case 'image/jpeg':
+				// JPEG has no alpha: composite onto white so transparent areas
+				// (e.g. a PNG logo converted to JPEG) don't turn black.
+				if ( $img->getImageAlphaChannel() ) {
+					$img->setImageBackgroundColor( 'white' );
+					$flat = $img->mergeImageLayers( Imagick::LAYERMETHOD_FLATTEN );
+					$img->destroy();
+					$img = $flat;
+				}
 				$img->setImageFormat( 'jpeg' );
 				$img->setImageCompressionQuality( $quality );
 				$img->setSamplingFactors( [ '2x2', '1x1', '1x1' ] );
@@ -241,6 +375,11 @@ class WebPNinja_Compressor {
 				$img->setOption( 'webp:method', '6' );
 				break;
 
+			case 'image/avif':
+				$img->setImageFormat( 'avif' );
+				$img->setImageCompressionQuality( $quality );
+				break;
+
 			default:
 				$img->destroy();
 				return false;
@@ -251,24 +390,48 @@ class WebPNinja_Compressor {
 		return $ok;
 	}
 
+	/** Loads any supported image with GD, detecting the input format from its bytes. */
+	private function gd_load( $src ) {
+		$info    = @getimagesize( $src ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- unreadable file is handled below.
+		$loaders = [
+			'image/jpeg' => 'imagecreatefromjpeg',
+			'image/png'  => 'imagecreatefrompng',
+			'image/webp' => 'imagecreatefromwebp',
+			'image/avif' => 'imagecreatefromavif',
+		];
+		$loader  = $loaders[ $info['mime'] ?? '' ] ?? '';
+		if ( ! $loader || ! function_exists( $loader ) ) {
+			return false;
+		}
+		$img = @$loader( $src ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- corrupt file is handled by the caller.
+		if ( $img ) {
+			imagealphablending( $img, false );
+			imagesavealpha( $img, true );
+		}
+		return $img;
+	}
+
 	private function encode_gd( $src, $dest, $mime, $quality ) {
+		$img = $this->gd_load( $src );
+		if ( ! $img ) {
+			return false;
+		}
+
 		switch ( $mime ) {
 			case 'image/jpeg':
-				$img = @imagecreatefromjpeg( $src );
-				if ( ! $img ) {
-					return false;
-				}
+				// JPEG has no alpha: composite onto white so transparent areas
+				// don't turn black.
+				$flat = imagecreatetruecolor( imagesx( $img ), imagesy( $img ) );
+				imagefill( $flat, 0, 0, imagecolorallocate( $flat, 255, 255, 255 ) );
+				imagealphablending( $flat, true );
+				imagecopy( $flat, $img, 0, 0, 0, 0, imagesx( $img ), imagesy( $img ) );
+				imagedestroy( $img );
+				$img = $flat;
 				imageinterlace( $img, true );
 				$ok = imagejpeg( $img, $dest, $quality );
 				break;
 
 			case 'image/png':
-				$img = @imagecreatefrompng( $src );
-				if ( ! $img ) {
-					return false;
-				}
-				imagealphablending( $img, false );
-				imagesavealpha( $img, true );
 				// GD's palette conversion discards the alpha channel entirely
 				// (transparent areas turn opaque), so it's only safe on fully
 				// opaque images; transparent ones get lossless recompression.
@@ -279,20 +442,15 @@ class WebPNinja_Compressor {
 				break;
 
 			case 'image/webp':
-				if ( ! function_exists( 'imagecreatefromwebp' ) ) {
-					return false;
-				}
-				$img = @imagecreatefromwebp( $src );
-				if ( ! $img ) {
-					return false;
-				}
-				imagealphablending( $img, false );
-				imagesavealpha( $img, true );
-				$ok = imagewebp( $img, $dest, $quality );
+				$ok = function_exists( 'imagewebp' ) && imagewebp( $img, $dest, $quality );
+				break;
+
+			case 'image/avif':
+				$ok = function_exists( 'imageavif' ) && imageavif( $img, $dest, $quality );
 				break;
 
 			default:
-				return false;
+				$ok = false;
 		}
 
 		imagedestroy( $img );
@@ -344,7 +502,7 @@ class WebPNinja_Compressor {
 		return 'image/webp' === $mime ? false !== strpos( $head, 'ANIM' ) : false !== strpos( $head, 'acTL' );
 	}
 
-	private function save_result( $attachment_id, $status, $before, $after, $files, $message = '' ) {
+	private function save_result( $attachment_id, $status, $before, $after, $files, $message = '', $converted_from = '' ) {
 		$result = [
 			'status' => $status,
 			'before' => (int) $before,
@@ -355,6 +513,9 @@ class WebPNinja_Compressor {
 		];
 		if ( $message ) {
 			$result['message'] = $message;
+		}
+		if ( $converted_from ) {
+			$result['from'] = $converted_from;
 		}
 		update_post_meta( $attachment_id, self::META_KEY, $result );
 		update_post_meta( $attachment_id, self::SAVED_META_KEY, max( 0, $before - $after ) );

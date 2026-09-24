@@ -85,8 +85,21 @@ class WebPNinja_Media_Column {
 			return '<span class="webpninja-muted">' . esc_html__( 'Already optimized', 'webpninja' ) . '</span>';
 		}
 
-		$pct = $result['before'] > 0 ? (int) floor( $saved / $result['before'] * 100 ) : 0;
-		return sprintf(
+		$pct  = $result['before'] > 0 ? (int) floor( $saved / $result['before'] * 100 ) : 0;
+		$from = '';
+		if ( ! empty( $result['from'] ) ) {
+			$labels = [ 'image/jpeg' => 'JPEG', 'image/png' => 'PNG', 'image/webp' => 'WebP', 'image/avif' => 'AVIF' ];
+			/* translators: 1: original format, 2: new format, e.g. "PNG → WebP" */
+			$from = '<br><small class="webpninja-muted">' . esc_html( sprintf( __( 'Converted %1$s → %2$s', 'webpninja' ), $labels[ $result['from'] ] ?? '', $labels[ $mime ] ?? '' ) ) . '</small>';
+		}
+		return $from ? sprintf(
+			'<strong class="webpninja-good">−%d%%</strong> <small class="webpninja-muted">%s → %s · %s</small>',
+			$pct,
+			esc_html( size_format( $result['before'], 1 ) ),
+			esc_html( size_format( $result['after'], 1 ) ),
+			/* translators: %d: number of files (original + thumbnails) */
+			esc_html( sprintf( _n( '%d file', '%d files', $result['files'], 'webpninja' ), $result['files'] ) )
+		) . $from : sprintf(
 			'<strong class="webpninja-good">−%d%%</strong> <small class="webpninja-muted">%s → %s · %s</small>',
 			$pct,
 			esc_html( size_format( $result['before'], 1 ) ),

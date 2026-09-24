@@ -4,18 +4,20 @@ Tags: image compression, optimize images, compress jpeg, compress png, webp
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Auto-compress images on upload. Privacy-first — all processing happens on your server with GD or Imagick.
+Convert uploads to WebP or AVIF and compress JPEG, PNG and WebP — on your own server. No API keys, no limits.
 
 == Description ==
 
-**WebP Ninja Image Compressor** automatically shrinks every image the moment it's uploaded to your WordPress Media Library. No API keys. No external requests. Everything happens on your own server.
+**WebP Ninja Image Compressor** automatically converts new uploads to WebP (or AVIF) and compresses every image the moment it's uploaded to your WordPress Media Library. No API keys. No external requests. Everything happens on your own server.
 
 **Features:**
-* Auto-compress JPEG, PNG, and WebP on upload
+* Converts new uploads to **WebP** by default — or AVIF, JPEG, or keep the original format
+* Only converts when the result is smaller; transparency is kept for WebP and AVIF
+* Auto-compress JPEG, PNG, WebP and AVIF on upload
 * Smart PNG compression — reduces colors like TinyPNG for 60–80% smaller PNGs, transparency preserved
 * Compresses the original file *and* every generated thumbnail
 * "Compress existing images" — catch up on your whole Media Library in one click
@@ -45,6 +47,12 @@ No. All compression is done locally by PHP (Imagick or GD) on your own server.
 = Which image formats are supported? =
 JPEG, PNG, and WebP. GIF and AVIF require browser-side tools like [webpninja.com](https://webpninja.com).
 
+= Which output format should I choose? =
+**WebP** (the default) is supported by every modern browser and is typically 25–35% smaller than JPEG, with transparency. **AVIF** is smaller still but slower to encode and needs WordPress 6.5+. **JPEG** gives maximum compatibility. **Keep original** only compresses. Formats your server can't produce are disabled on the settings page.
+
+= Are my existing images converted to WebP? =
+No — only new uploads. Existing images are compressed but keep their format, because their URLs are already used in your posts and pages; converting them would break those links.
+
 = Where do I see what was compressed? =
 In **Media → Library**. In list view there is a *WebP Ninja* column; in grid view, click an image and look for the *WebP Ninja* row in the details panel. **Settings → WebP Ninja** shows the total saved.
 
@@ -61,6 +69,12 @@ Yes. With Imagick, transparent PNGs get full smart compression. With GD only, tr
 80–85 is ideal for most sites. Lower values give smaller files but more visible compression artifacts.
 
 == Changelog ==
+
+= 1.2.0 =
+* New: output format setting — convert new uploads to WebP (default), AVIF or JPEG, or keep the original format. Unsupported formats are detected and disabled.
+* New: conversion only happens when the result is smaller; WebP/AVIF keep transparency, JPEG flattens it onto white.
+* New: AVIF images are compressed too.
+* New: the Media Library shows which format an image was converted from.
 
 = 1.1.1 =
 * Fix: the Media Library's "File size" now shows the compressed size (it showed the size before compression). Images compressed by 1.1.0 are corrected automatically.
@@ -80,6 +94,9 @@ Yes. With Imagick, transparent PNGs get full smart compression. With GD only, tr
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+New uploads are now converted to WebP by default. Choose AVIF, JPEG or "Keep original format" under Settings → WebP Ninja.
 
 = 1.1.1 =
 Shows correct file sizes in the Media Library after compression.

@@ -3,7 +3,7 @@
  * Plugin Name:       WebP Ninja Image Compressor
  * Plugin URI:        https://webpninja.com
  * Description:       Compresses JPEG, PNG and WebP images on upload with Imagick or GD. Privacy-first — all compression happens on your own server.
- * Version:           1.1.1
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            WebP Ninja
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBPNINJA_VERSION', '1.1.1' );
+define( 'WEBPNINJA_VERSION', '1.2.0' );
 define( 'WEBPNINJA_FILE', __FILE__ );
 define( 'WEBPNINJA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WEBPNINJA_URL', plugin_dir_url( __FILE__ ) );
@@ -30,6 +30,7 @@ register_activation_hook( __FILE__, function () {
 	add_option( 'webpninja_quality', 82 );
 	add_option( 'webpninja_auto', 1 );
 	add_option( 'webpninja_png_lossy', 1 );
+	add_option( 'webpninja_format', 'webp' );
 	set_transient( 'webpninja_activated', 1, MINUTE_IN_SECONDS * 10 );
 } );
 

@@ -132,3 +132,8 @@
 	width: 180px;
 	font-weight: 600;
 }
+
+.webpninja-formats label {
+	display: block;
+	margin: 6px 0;
+}
