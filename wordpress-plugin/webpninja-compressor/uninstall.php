@@ -13,6 +13,9 @@ delete_option( 'webpninja_auto' );
 delete_option( 'webpninja_png_lossy' );
 delete_option( 'webpninja_format' );
 delete_option( 'webpninja_db_version' );
+delete_option( 'webpninja_share_stats' );
+delete_option( 'webpninja_stats_pending' );
+wp_clear_scheduled_hook( 'webpninja_send_stats' );
 delete_transient( 'webpninja_activated' );
 
 delete_post_meta_by_key( '_webpninja' );

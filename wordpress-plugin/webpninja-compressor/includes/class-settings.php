@@ -44,6 +44,13 @@ class WebPNinja_Settings {
 				return isset( WebPNinja_Compressor::OUTPUT_FORMATS[ $v ] ) ? $v : 'original';
 			},
 		] );
+		register_setting( 'webpninja_group', WebPNinja_Stats::OPTION, [
+			'type'              => 'boolean',
+			'default'           => 0,
+			'sanitize_callback' => function ( $v ) {
+				return $v ? 1 : 0;
+			},
+		] );
 		foreach ( [ 'webpninja_auto', 'webpninja_png_lossy' ] as $option ) {
 			register_setting( 'webpninja_group', $option, [
 				'type'              => 'boolean',
@@ -251,6 +258,26 @@ class WebPNinja_Settings {
 							<input type="checkbox" name="webpninja_png_lossy" value="1" <?php checked( $png_lossy ); ?>>
 							<?php esc_html_e( 'Smart PNG compression (reduce colors, like TinyPNG) — much smaller PNGs, visually near-identical', 'webp-ninja-image-compressor' ); ?>
 						</label>
+					</p>
+				</div>
+
+				<div class="webpninja-card">
+					<h2><?php esc_html_e( 'Public counter (optional)', 'webp-ninja-image-compressor' ); ?></h2>
+					<p>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( WebPNinja_Stats::OPTION ); ?>" value="1" <?php checked( WebPNinja_Stats::enabled() ); ?>>
+							<?php esc_html_e( 'Add my compressed images to the live counter on webpninja.com', 'webp-ninja-image-compressor' ); ?>
+						</label>
+					</p>
+					<p class="description">
+						<?php
+						printf(
+							/* translators: 1: API host name, 2: link to the privacy policy */
+							esc_html__( 'Off by default. When on, the plugin sends only a number — how many images were compressed — to %1$s once an hour. No images, file names, URLs or personal data are ever sent. %2$s', 'webp-ninja-image-compressor' ),
+							'<code>api.webpninja.com</code>',
+							'<a href="https://webpninja.com/privacy" target="_blank" rel="noopener">' . esc_html__( 'Privacy policy', 'webp-ninja-image-compressor' ) . '</a>'
+						);
+						?>
 					</p>
 				</div>
 

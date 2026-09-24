@@ -289,6 +289,15 @@ class WebPNinja_Compressor {
 		}
 
 		$result = $this->save_result( $attachment_id, 'done', $before, $after, count( $paths ), '', $converted ? $converted['from'] : '' );
+		if ( $after < $before ) {
+			/**
+			 * Fires after an image was made smaller (compressed and/or converted).
+			 *
+			 * @param int   $attachment_id Attachment post ID.
+			 * @param array $result        Before/after sizes and file count.
+			 */
+			do_action( 'webpninja_compressed', $attachment_id, $result );
+		}
 		unset( $this->converted[ $key ] );
 		return $result;
 	}
