@@ -72,8 +72,16 @@ class WebPNinja_Settings {
 		return $links;
 	}
 
-	/** One-time pointer shown right after activation, so nobody has to hunt for the plugin. */
+	/**
+	 * One-time pointer right after activation, so nobody has to hunt for the
+	 * plugin. Shown only on the Plugins screen where the user just clicked
+	 * "Activate" — never across the rest of the dashboard (guideline 11).
+	 */
 	public function activation_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'plugins' !== $screen->id ) {
+			return;
+		}
 		if ( ! current_user_can( 'manage_options' ) || ! get_transient( 'webpninja_activated' ) ) {
 			return;
 		}
@@ -327,16 +335,6 @@ class WebPNinja_Settings {
 						</tr>
 					</tbody>
 				</table>
-			</div>
-
-			<div class="webpninja-footer">
-				<?php
-				printf(
-					/* translators: %s: link to webpninja.com */
-					esc_html__( 'Need AVIF, exact file sizes (e.g. under 50 KB) or batch conversion? Try %s — free and browser-based.', 'webp-ninja-image-compressor' ),
-					'<a href="https://webpninja.com/tools" target="_blank" rel="noopener">webpninja.com</a>'
-				);
-				?>
 			</div>
 		</div>
 		<?php

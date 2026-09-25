@@ -174,9 +174,11 @@ class WebPNinja_Media_Column {
 		return add_query_arg( 'webpninja_compressed', $count, $redirect );
 	}
 
+	/** Result of our own bulk action, shown only on the Media Library screen it ran on. */
 	public function bulk_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only count set by our own redirect.
-		if ( empty( $_GET['webpninja_compressed'] ) ) {
+		if ( ! $screen || 'upload' !== $screen->id || empty( $_GET['webpninja_compressed'] ) ) {
 			return;
 		}
 		$count = absint( $_GET['webpninja_compressed'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended

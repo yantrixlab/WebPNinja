@@ -4,7 +4,7 @@ Tags: image compression, optimize images, compress jpeg, compress png, webp
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,7 @@ Convert uploads to WebP or AVIF and compress JPEG, PNG and WebP — on your own 
 * Uses Imagick when available, falls back to GD
 * No tracking and no external calls — unless you opt in to adding your image count to the public counter on webpninja.com
 
-**Need more?** Visit [webpninja.com](https://webpninja.com) for free browser-based compression with AVIF, GIF, and no file size limits.
+This is the official WordPress plugin of [WebP Ninja](https://webpninja.com), which also offers a free browser-based image compressor and a developer API.
 
 == Installation ==
 
@@ -80,6 +80,10 @@ It connects to one external service, and only if you switch it on under **Settin
 * **Provider:** WebP Ninja — [Terms of Service](https://webpninja.com/terms), [Privacy Policy](https://webpninja.com/privacy).
 
 == Changelog ==
+
+= 1.3.1 =
+* The one-time activation notice appears only on the Plugins screen, and the bulk-action result only in the Media Library.
+* Removed the promotional link from the settings page.
 
 = 1.3.0 =
 * New: optional "Public counter" setting (off by default) that adds your compressed-image count to the live counter on webpninja.com. Only a number is sent, once an hour. See "External services".
