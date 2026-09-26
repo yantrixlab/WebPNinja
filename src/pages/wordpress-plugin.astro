@@ -10,7 +10,7 @@ import Footer from '../components/Footer.astro';
 const faqs = [
   {
     q: 'Does the plugin send my images to an external server?',
-    a: 'No. All compression and conversion runs on your own WordPress server with Imagick or GD. There are no API keys, no external requests and no tracking.',
+    a: 'No. All compression and conversion runs on your own WordPress server with Imagick or GD. There are no API keys and no tracking, and no external requests unless you opt in to adding your image count to our public counter.',
   },
   {
     q: 'Does it convert images to WebP?',
@@ -18,11 +18,11 @@ const faqs = [
   },
   {
     q: 'What about images I uploaded before installing it?',
-    a: 'Go to Settings → WebP Ninja and click "Compress existing images". Existing images are compressed but keep their format, so links in your existing posts keep working.',
+    a: 'Go to Settings → Image Compressor and click "Compress existing images". Existing images are compressed but keep their format, so links in your existing posts keep working.',
   },
   {
     q: 'Where do I see how much was saved?',
-    a: 'Open any image in the Media Library to see its savings, or switch the Media Library to list view for a WebP Ninja column. Settings → WebP Ninja shows the total saved.',
+    a: 'Open any image in the Media Library to see its savings, or switch the Media Library to list view for a Compression column. Settings → Image Compressor shows the total saved.',
   },
 ];
 
@@ -34,7 +34,7 @@ const faqSchema = {
 ---
 
 <Layout
-  title="WebP Ninja WordPress Plugin — Compress & Convert Images to WebP"
+  title="Yantrixlab Image Compressor — WordPress Plugin for WebP & AVIF | WebP Ninja"
   description="Free WordPress plugin that converts uploads to WebP and compresses JPEG, PNG and WebP on your own server. No API key, no limits, no external calls."
 >
   <Fragment slot="head">

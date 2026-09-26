@@ -39,10 +39,10 @@ class WebPNinja_Media_Column {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'webpninja' ),
 			'i18n'    => [
-				'compressing' => __( 'Compressing…', 'webp-ninja-image-compressor' ),
-				'failed'      => __( 'Compression failed', 'webp-ninja-image-compressor' ),
-				'done'        => __( 'All images are compressed.', 'webp-ninja-image-compressor' ),
-				'remaining'   => __( 'remaining', 'webp-ninja-image-compressor' ),
+				'compressing' => __( 'Compressing…', 'yantrixlab-image-compressor' ),
+				'failed'      => __( 'Compression failed', 'yantrixlab-image-compressor' ),
+				'done'        => __( 'All images are compressed.', 'yantrixlab-image-compressor' ),
+				'remaining'   => __( 'remaining', 'yantrixlab-image-compressor' ),
 			],
 		] );
 	}
@@ -61,9 +61,9 @@ class WebPNinja_Media_Column {
 		if ( ! $result ) {
 			return sprintf(
 				'<span class="webpninja-muted">%s</span><br><button type="button" class="button button-small webpninja-compress" data-id="%d">%s</button>',
-				esc_html__( 'Not compressed', 'webp-ninja-image-compressor' ),
+				esc_html__( 'Not compressed', 'yantrixlab-image-compressor' ),
 				(int) $attachment_id,
-				esc_html__( 'Compress now', 'webp-ninja-image-compressor' )
+				esc_html__( 'Compress now', 'yantrixlab-image-compressor' )
 			);
 		}
 
@@ -71,19 +71,19 @@ class WebPNinja_Media_Column {
 			return sprintf(
 				'<span class="webpninja-muted" title="%s">%s</span>',
 				esc_attr( $result['message'] ?? '' ),
-				'skipped' === $result['status'] ? esc_html__( 'Skipped', 'webp-ninja-image-compressor' ) : esc_html__( 'Failed', 'webp-ninja-image-compressor' )
+				'skipped' === $result['status'] ? esc_html__( 'Skipped', 'yantrixlab-image-compressor' ) : esc_html__( 'Failed', 'yantrixlab-image-compressor' )
 			) . ( ! empty( $result['message'] ) ? '<br><small class="webpninja-muted">' . esc_html( $result['message'] ) . '</small>' : '' );
 		}
 
 		if ( isset( $result['saved'] ) ) {
 			// Recorded by 1.0.x — only the saved byte count is known.
 			/* translators: %s: amount of disk space saved, e.g. "1.2 MB" */
-			return sprintf( '<strong class="webpninja-good">%s</strong>', esc_html( sprintf( __( '%s saved', 'webp-ninja-image-compressor' ), size_format( $result['saved'], 1 ) ) ) );
+			return sprintf( '<strong class="webpninja-good">%s</strong>', esc_html( sprintf( __( '%s saved', 'yantrixlab-image-compressor' ), size_format( $result['saved'], 1 ) ) ) );
 		}
 
 		$saved = max( 0, $result['before'] - $result['after'] );
 		if ( $saved <= 0 ) {
-			return '<span class="webpninja-muted">' . esc_html__( 'Already optimized', 'webp-ninja-image-compressor' ) . '</span>';
+			return '<span class="webpninja-muted">' . esc_html__( 'Already optimized', 'yantrixlab-image-compressor' ) . '</span>';
 		}
 
 		$pct  = $result['before'] > 0 ? (int) floor( $saved / $result['before'] * 100 ) : 0;
@@ -91,7 +91,7 @@ class WebPNinja_Media_Column {
 		if ( ! empty( $result['from'] ) ) {
 			$labels = [ 'image/jpeg' => 'JPEG', 'image/png' => 'PNG', 'image/webp' => 'WebP', 'image/avif' => 'AVIF' ];
 			/* translators: 1: original format, 2: new format, e.g. "PNG → WebP" */
-			$from = '<br><small class="webpninja-muted">' . esc_html( sprintf( __( 'Converted %1$s → %2$s', 'webp-ninja-image-compressor' ), $labels[ $result['from'] ] ?? '', $labels[ $mime ] ?? '' ) ) . '</small>';
+			$from = '<br><small class="webpninja-muted">' . esc_html( sprintf( __( 'Converted %1$s → %2$s', 'yantrixlab-image-compressor' ), $labels[ $result['from'] ] ?? '', $labels[ $mime ] ?? '' ) ) . '</small>';
 		}
 		return $from ? sprintf(
 			'<strong class="webpninja-good">−%d%%</strong> <small class="webpninja-muted">%s → %s · %s</small>',
@@ -99,21 +99,21 @@ class WebPNinja_Media_Column {
 			esc_html( size_format( $result['before'], 1 ) ),
 			esc_html( size_format( $result['after'], 1 ) ),
 			/* translators: %d: number of files (original + thumbnails) */
-			esc_html( sprintf( _n( '%d file', '%d files', $result['files'], 'webp-ninja-image-compressor' ), $result['files'] ) )
+			esc_html( sprintf( _n( '%d file', '%d files', $result['files'], 'yantrixlab-image-compressor' ), $result['files'] ) )
 		) . $from : sprintf(
 			'<strong class="webpninja-good">−%d%%</strong> <small class="webpninja-muted">%s → %s · %s</small>',
 			$pct,
 			esc_html( size_format( $result['before'], 1 ) ),
 			esc_html( size_format( $result['after'], 1 ) ),
 			/* translators: %d: number of files (original + thumbnails) */
-			esc_html( sprintf( _n( '%d file', '%d files', $result['files'], 'webp-ninja-image-compressor' ), $result['files'] ) )
+			esc_html( sprintf( _n( '%d file', '%d files', $result['files'], 'yantrixlab-image-compressor' ), $result['files'] ) )
 		);
 	}
 
 	/* ─────────── List view column ─────────── */
 
 	public function add_column( $columns ) {
-		$columns['webpninja_savings'] = __( 'WebP Ninja', 'webp-ninja-image-compressor' );
+		$columns['webpninja_savings'] = __( 'Compression', 'yantrixlab-image-compressor' );
 		return $columns;
 	}
 
@@ -131,7 +131,7 @@ class WebPNinja_Media_Column {
 			return $fields;
 		}
 		$fields['webpninja'] = [
-			'label' => __( 'WebP Ninja', 'webp-ninja-image-compressor' ),
+			'label' => __( 'Compression', 'yantrixlab-image-compressor' ),
 			'input' => 'html',
 			'html'  => '<div class="webpninja-status" data-id="' . (int) $post->ID . '">' . wp_kses_post( self::status_html( $post->ID ) ) . '</div>',
 		];
@@ -144,7 +144,7 @@ class WebPNinja_Media_Column {
 		check_ajax_referer( 'webpninja', 'nonce' );
 		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		if ( ! $id || ! current_user_can( 'edit_post', $id ) ) {
-			wp_send_json_error( [ 'message' => __( 'You are not allowed to edit this image.', 'webp-ninja-image-compressor' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'You are not allowed to edit this image.', 'yantrixlab-image-compressor' ) ], 403 );
 		}
 		$this->compressor->compress_existing( $id );
 		wp_send_json_success( [ 'html' => self::status_html( $id ) ] );
@@ -153,7 +153,7 @@ class WebPNinja_Media_Column {
 	/* ─────────── Bulk action (list view) ─────────── */
 
 	public function add_bulk_action( $actions ) {
-		$actions['webpninja_compress'] = __( 'Compress with WebP Ninja', 'webp-ninja-image-compressor' );
+		$actions['webpninja_compress'] = __( 'Compress images', 'yantrixlab-image-compressor' );
 		return $actions;
 	}
 
@@ -185,7 +185,7 @@ class WebPNinja_Media_Column {
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			/* translators: %d: number of images */
-			esc_html( sprintf( _n( 'WebP Ninja compressed %d image.', 'WebP Ninja compressed %d images.', $count, 'webp-ninja-image-compressor' ), $count ) )
+			esc_html( sprintf( _n( 'Compressed %d image.', 'Compressed %d images.', $count, 'yantrixlab-image-compressor' ), $count ) )
 		);
 	}
 }

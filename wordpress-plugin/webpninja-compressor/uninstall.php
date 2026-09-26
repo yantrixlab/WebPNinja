@@ -1,6 +1,6 @@
 <?php
 /**
- * Removes WebP Ninja's settings and per-image records. Compressed image files
+ * Removes the plugin's settings and per-image records. Compressed image files
  * are left as they are — they're ordinary, valid images.
  */
 

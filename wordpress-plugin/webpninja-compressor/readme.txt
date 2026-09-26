@@ -1,10 +1,10 @@
-=== WebP Ninja Image Compressor ===
+=== Yantrixlab Image Compressor – WebP & AVIF ===
 Contributors: yantrixlab
 Tags: image compression, optimize images, compress jpeg, compress png, webp
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 1.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Convert uploads to WebP or AVIF and compress JPEG, PNG and WebP — on your own 
 
 == Description ==
 
-**WebP Ninja Image Compressor** automatically converts new uploads to WebP (or AVIF) and compresses every image the moment it's uploaded to your WordPress Media Library. No API keys. No external requests by default. Everything happens on your own server.
+**Yantrixlab Image Compressor** automatically converts new uploads to WebP (or AVIF) and compresses every image the moment it's uploaded to your WordPress Media Library. No API keys. No external requests by default. Everything happens on your own server.
 
 **Features:**
 * Converts new uploads to **WebP** by default — or AVIF, JPEG, or keep the original format
@@ -29,15 +29,15 @@ Convert uploads to WebP or AVIF and compress JPEG, PNG and WebP — on your own 
 * Uses Imagick when available, falls back to GD
 * No tracking and no external calls — unless you opt in to adding your image count to the public counter on webpninja.com
 
-This is the official WordPress plugin of [WebP Ninja](https://webpninja.com), which also offers a free browser-based image compressor and a developer API.
+Made by Yantrixlab, who also run the free browser-based image compressor and developer API at [webpninja.com](https://webpninja.com).
 
 == Installation ==
 
 1. Upload the `webpninja-compressor` folder to `/wp-content/plugins/`.
 2. Activate the plugin in **Plugins → Installed Plugins**.
 3. New uploads are now compressed automatically.
-4. To compress images you uploaded earlier, go to **Settings → WebP Ninja** and click **Compress existing images**.
-5. See the results in **Media → Library** — switch to *list view* for the WebP Ninja column, or open any image to see its savings.
+4. To compress images you uploaded earlier, go to **Settings → Image Compressor** and click **Compress existing images**.
+5. See the results in **Media → Library** — switch to *list view* for the *Compression* column, or open any image to see its savings.
 
 == Frequently Asked Questions ==
 
@@ -54,13 +54,13 @@ JPEG, PNG, WebP and AVIF (AVIF needs WordPress 6.5+ and server support). GIFs an
 No — only new uploads. Existing images are compressed but keep their format, because their URLs are already used in your posts and pages; converting them would break those links.
 
 = Where do I see what was compressed? =
-In **Media → Library**. In list view there is a *WebP Ninja* column; in grid view, click an image and look for the *WebP Ninja* row in the details panel. **Settings → WebP Ninja** shows the total saved.
+In **Media → Library**. In list view there is a *Compression* column; in grid view, click an image and look for the *Compression* row in the details panel. **Settings → Image Compressor** shows the total saved.
 
 = Will it compress images I uploaded before installing the plugin? =
-Yes — go to **Settings → WebP Ninja** and click **Compress existing images**, or use the *Compress with WebP Ninja* bulk action in the Media Library list view.
+Yes — go to **Settings → Image Compressor** and click **Compress existing images**, or use the *Compress images* bulk action in the Media Library list view.
 
 = An image says "Already optimized". Is that a problem? =
-No. WebP Ninja only replaces a file when the result is at least 3% smaller. Images that were already well compressed are left exactly as they were.
+No. The plugin only replaces a file when the result is at least 3% smaller. Images that were already well compressed are left exactly as they were.
 
 = Does it keep PNG transparency? =
 Yes. With Imagick, transparent PNGs get full smart compression. With GD only, transparent PNGs are compressed losslessly (GD's color reduction can't keep transparency), and fully opaque PNGs get smart compression.
@@ -72,14 +72,17 @@ Yes. With Imagick, transparent PNGs get full smart compression. With GD only, tr
 
 This plugin compresses and converts images entirely on your own server and makes **no external requests by default**.
 
-It connects to one external service, and only if you switch it on under **Settings → WebP Ninja → Public counter** (off by default):
+It connects to one external service, and only if you switch it on under **Settings → Image Compressor → Public counter** (off by default):
 
-* **Service:** the WebP Ninja stats API at `https://api.webpninja.com/api/stats/increment`, which adds to the "images compressed" counter shown on webpninja.com.
+* **Service:** the stats API at `https://api.webpninja.com/api/stats/increment`, which adds to the "images compressed" counter shown on webpninja.com.
 * **What is sent:** a single number, how many images were compressed since the last report. No images, file names, URLs, site details or personal data. Like any web request, it also reveals your server's IP address to the service.
 * **When:** at most once an hour, via WP-Cron. Turning the option off stops all reports and discards any count not yet sent.
-* **Provider:** WebP Ninja — [Terms of Service](https://webpninja.com/terms), [Privacy Policy](https://webpninja.com/privacy).
+* **Provider:** Yantrixlab, operator of webpninja.com — [Terms of Service](https://webpninja.com/terms), [Privacy Policy](https://webpninja.com/privacy).
 
 == Changelog ==
+
+= 1.4.0 =
+* Renamed to Yantrixlab Image Compressor – WebP & AVIF. Settings, data and behaviour are unchanged; the settings page is now under Settings → Image Compressor.
 
 = 1.3.1 =
 * The one-time activation notice appears only on the Plugins screen, and the bulk-action result only in the Media Library.
@@ -103,7 +106,7 @@ It connects to one external service, and only if you switch it on under **Settin
 * Fix: files are only replaced when the result is smaller — compression can never grow an image.
 * New: "Compress existing images" on the settings page, with progress bar.
 * New: "Compress now" button and status in the Media Library (list view column and image details panel).
-* New: "Compress with WebP Ninja" bulk action.
+* New: "Compress images" bulk action in the Media Library.
 * New: server check (Imagick/GD, WebP support) and total savings on the settings page.
 * New: thumbnails are generated at your quality setting in a single pass.
 * New: animated WebP/PNG are skipped; color profiles are kept.
@@ -114,11 +117,14 @@ It connects to one external service, and only if you switch it on under **Settin
 
 == Upgrade Notice ==
 
+= 1.4.0 =
+The plugin has a new name. Nothing else changes: your settings and compressed images are kept.
+
 = 1.3.0 =
 Adds an optional, off-by-default setting to contribute your image count to the webpninja.com public counter.
 
 = 1.2.0 =
-New uploads are now converted to WebP by default. Choose AVIF, JPEG or "Keep original format" under Settings → WebP Ninja.
+New uploads are now converted to WebP by default. Choose AVIF, JPEG or "Keep original format" under Settings → Image Compressor.
 
 = 1.1.1 =
 Shows correct file sizes in the Media Library after compression.

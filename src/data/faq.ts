@@ -65,7 +65,7 @@ export const faqs = [
   },
   {
     q: "Is there a WordPress plugin?",
-    a: "Yes — the WebP Ninja Compressor plugin auto-compresses every image on upload directly on your own WordPress server, using GD or Imagick, with no external API calls. Download it free from the WordPress Plugin section above.",
+    a: "Yes — our free Yantrixlab Image Compressor plugin auto-compresses every image on upload directly on your own WordPress server, using GD or Imagick, with no external API calls. Download it free from the WordPress Plugin section above.",
   },
   {
     q: "How is WebP Ninja different from TinyPNG or Squoosh?",

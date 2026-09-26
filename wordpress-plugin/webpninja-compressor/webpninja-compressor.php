@@ -1,23 +1,23 @@
 <?php
 /**
- * Plugin Name:       WebP Ninja Image Compressor
+ * Plugin Name:       Yantrixlab Image Compressor – WebP & AVIF
  * Plugin URI:        https://webpninja.com/wordpress-plugin
  * Description:       Compresses JPEG, PNG and WebP images on upload with Imagick or GD. Privacy-first — all compression happens on your own server.
- * Version:           1.3.1
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            WebP Ninja
+ * Author:            Yantrixlab
  * Author URI:        https://webpninja.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       webp-ninja-image-compressor
+ * Text Domain:       yantrixlab-image-compressor
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WEBPNINJA_VERSION', '1.3.1' );
+define( 'WEBPNINJA_VERSION', '1.4.0' );
 define( 'WEBPNINJA_FILE', __FILE__ );
 define( 'WEBPNINJA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WEBPNINJA_URL', plugin_dir_url( __FILE__ ) );
