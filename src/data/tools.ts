@@ -57,7 +57,7 @@ export const tools: ToolPage[] = [
     highlight: 'converter.',
     sub: 'Turn heavy PNGs into WebP files that are typically <strong class="text-[#111] font-semibold">25–80% smaller</strong> — transparency included. Runs entirely in your browser.',
     format: 'webp',
-    quality: 60,
+    quality: 20,
     introHeading: 'Why convert PNG to WebP?',
     intro: [
       'PNG is lossless, which makes it great for editing but heavy on the web — a single screenshot or product cut-out can easily weigh a few megabytes. WebP was built by Google specifically for websites: it supports the same alpha transparency as PNG while producing far smaller files.',
@@ -95,7 +95,7 @@ export const tools: ToolPage[] = [
     highlight: 'in one click.',
     sub: 'Convert JPEG photos to WebP and cut their size by <strong class="text-[#111] font-semibold">25–35% or more</strong> with no visible difference. Private, unlimited and free.',
     format: 'webp',
-    quality: 60,
+    quality: 20,
     introHeading: 'JPEG to WebP: same photo, fewer bytes',
     intro: [
       'JPEG has been the default photo format for 30 years, but its compression is dated. WebP uses newer prediction and entropy coding, so the same photo at the same visual quality comes out noticeably smaller — which means faster product pages, blogs and galleries.',
@@ -325,7 +325,7 @@ export const tools: ToolPage[] = [
     highlight: 'into something lighter.',
     sub: 'GIF is a 1987 format. Re-encode static GIFs as <strong class="text-[#111] font-semibold">WebP or PNG</strong> and they usually get far smaller — with the same look.',
     format: 'webp',
-    quality: 60,
+    quality: 20,
     introHeading: 'The best way to reduce GIF size',
     intro: [
       'GIF’s compression is decades old and limited to 256 colors, so static GIF images — diagrams, logos, badges, old web graphics — are almost always larger than they need to be. Re-encoding them as WebP (smallest) or PNG (most compatible) reduces GIF size dramatically without changing how they look.',

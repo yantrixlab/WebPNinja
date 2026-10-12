@@ -28,7 +28,7 @@ const {
   sub = 'Up to <strong class="text-[#111] font-semibold">80% smaller</strong> in seconds — PNG, JPEG, WebP, AVIF and more. Powered by MozJPEG & oxipng. Runs entirely in your browser.',
   eyebrow = '100% private &nbsp;·&nbsp; No file limits &nbsp;·&nbsp; Free forever',
   defaultFormat = 'webp',
-  defaultQuality = 60,
+  defaultQuality = 20,
   targetKB = 0,
   rememberFormat = false,
   fullHeight = true,
@@ -1382,11 +1382,10 @@ formatSelect.addEventListener('change', () => {
     try { localStorage.setItem(FORMAT_PREF_KEY, outputFormat); } catch { /* ignore */ }
   }
 
-  // Switching to WebP resets to its default of 60. Measured on the showcase
-  // images: at 20 a photo visibly smears (SSIM 0.86) while 60 looks close to
-  // the original (SSIM 0.94) and is still ~94% smaller than the source PNG.
+  // Switching to WebP resets to its default of 20 (maximum savings; raise the
+  // slider for photos where fine texture matters).
   if (outputFormat === 'webp') {
-    quality = 60;
+    quality = 20;
     qualitySlider.value = String(quality);
     if (!targetKB) qualityDisplay.textContent = `${quality}%`;
   }
